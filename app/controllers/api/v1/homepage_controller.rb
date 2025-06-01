@@ -1,4 +1,4 @@
-class HomepageController < ApplicationController
+class Api::V1::HomepageController < Api::V1::ApplicationController
   def index
     @version = ActiveRecord::Base.connection.execute("SELECT version();").first['version']
     p @version
