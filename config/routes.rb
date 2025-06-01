@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   post "api/v1/auth/register", to: "api/v1/auth#register"
 
   get "api/v1/users", to: "api/v1/users#index"
-  post "api/v1/users", to: "api/v1/users#create"
+  # post "api/v1/users", to: "api/v1/users#create"
   get "api/v1/users/:id", to: "api/v1/users#show"
   put "api/v1/users/:id", to: "api/v1/users#update"
   delete "api/v1/users/:id", to: "api/v1/users#delete"

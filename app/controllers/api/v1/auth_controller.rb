@@ -11,17 +11,19 @@ class Api::V1::AuthController < Api::V1::BaseController
     end
 
     def register
-        puts "==================="
-        puts params[:user]
-
-        # @user = User.new(email: params[:user][:email], password_digest: params[:user][:password])
-
-        render json: { message: "register" }
-        # user = User.new()
+        return render json: { error: "passwords don't match"}, status: :unprocessable_entity if user_params[:password] != user_params[:confirm_password]
+        @user = User.new(user_params.except(:confirm_password))
+        
+        if @user.save
+            token = JsonWebToken.encode({ user_id: @user.id })
+            render json: { token: token, user: { id: @user.id, email: @user.email} }, status: :created
+        else
+            render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+        end
     end
 
     private
     def user_params
-        params.permit(:email, :password, :confirm_password)
+        params.require(:user).permit(:email, :password, :confirm_password)
     end
 end
