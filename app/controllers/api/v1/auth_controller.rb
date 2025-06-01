@@ -11,6 +11,11 @@ class Api::V1::AuthController < Api::V1::BaseController
     end
 
     def register
+        puts "==================="
+        puts params[:user]
+
+        # @user = User.new(email: params[:user][:email], password_digest: params[:user][:password])
+
         render json: { message: "register" }
         # user = User.new()
     end
