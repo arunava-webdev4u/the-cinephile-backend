@@ -1,18 +1,18 @@
 class Api::V1::AuthController < Api::V1::BaseController
     def login
-        render json: { message: "login" }
-        # user = User.find(email: params[:email])
-        # if user & user.authenticate(params[:password])
-        #     token = JsonWebToken.encode(user_id: user.id)
-        #     render json: { token: token, user: { id: user.id, email: user.email } }, status: :ok
-        # else
-        #     render json: { error: "Invalid email or password" }, status: :unauthorized
-        # end
+        @user = User.find_by_email(auth_params[:email])
+
+        if @user && @user.authenticate(auth_params[:password])
+            token = JsonWebToken.encode({ user_id: @user.id})
+            render json: { token: token, user: { id: @user.id, email: @user.email} }, status: :ok
+        else
+            render json: { error: "email or password is incorrect" }
+        end
     end
 
     def register
-        return render json: { error: "passwords don't match"}, status: :unprocessable_entity if user_params[:password] != user_params[:confirm_password]
-        @user = User.new(user_params.except(:confirm_password))
+        return render json: { error: "passwords don't match"}, status: :unprocessable_entity if auth_params[:password] != auth_params[:confirm_password]
+        @user = User.new(auth_params.except(:confirm_password))
         
         if @user.save
             token = JsonWebToken.encode({ user_id: @user.id })
@@ -23,7 +23,7 @@ class Api::V1::AuthController < Api::V1::BaseController
     end
 
     private
-    def user_params
+    def auth_params
         params.require(:user).permit(:email, :password, :confirm_password)
     end
 end
