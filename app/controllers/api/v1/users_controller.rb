@@ -32,7 +32,7 @@ class Api::V1::UsersController < Api::V1::ApplicationController
         @user = User.find(params[:id])
 
         render json: { error: @user.errors.full_message }, status: :not_found unless @user
-        
+
         if @user.destroy
             render json: @user, status: :ok
         else
