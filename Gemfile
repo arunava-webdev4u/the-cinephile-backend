@@ -45,5 +45,5 @@ group :development, :test do
   gem "rspec-rails"
   gem "factory_bot_rails"
   gem "faker" # (Optional: for generating test data)
-  gem "parallel_tests"
+  # gem "parallel_tests"
 end
