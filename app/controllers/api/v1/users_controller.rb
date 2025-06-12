@@ -29,14 +29,17 @@ class Api::V1::UsersController < Api::V1::ApplicationController
     end
 
     def delete
-        @user = User.find(params[:id])
-
-        render json: { error: @user.errors.full_message }, status: :not_found unless @user
+        @user = User.find_by(id: params[:id])
+        
+        unless @user
+            render json: { error: "User not found" }, status: :not_found
+            return
+        end
 
         if @user.destroy
-            render json: @user, status: :ok
+            render json: { message: "User deleted successfully" }, status: :ok
         else
-            render json: { error: @user.errors.full_message }, status: :unprocessable_entity
+            render json: { error: @user.errors.full_messages }, status: :unprocessable_entity
         end
     end
 

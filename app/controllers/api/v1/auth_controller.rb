@@ -1,4 +1,6 @@
 class Api::V1::AuthController < Api::V1::BaseController
+    skip_before_action :authenticate_user!, only: [:login, :register]
+
     def login
         @user = User.find_by_email(auth_params[:email])
 
@@ -18,12 +20,12 @@ class Api::V1::AuthController < Api::V1::BaseController
             token = JsonWebToken.encode({ user_id: @user.id })
             render json: { token: token, user: { id: @user.id, email: @user.email } }, status: :created
         else
-            render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: @user.errors }, status: :unprocessable_entity
         end
     end
 
     private
     def auth_params
-        params.require(:user).permit(:email, :password, :confirm_password)
+        params.require(:user).permit(:email, :password, :confirm_password, :first_name, :last_name, :country, :date_of_birth)
     end
 end
