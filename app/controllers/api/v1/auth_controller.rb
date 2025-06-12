@@ -1,12 +1,12 @@
 class Api::V1::AuthController < Api::V1::BaseController
-    skip_before_action :authenticate_user!, only: [:login, :register]
+    skip_before_action :authenticate_user!, only: [ :login, :register ]
 
     def login
         @user = User.find_by_email(auth_params[:email])
 
         if @user && @user.authenticate(auth_params[:password])
             token = JsonWebToken.encode({ user_id: @user.id })
-            render json: { token: token, user: { id: @user.id, email: @user.email } }, status: :ok
+            render json: { token: token, user: @user.as_json }, status: :ok
         else
             render json: { error: "email or password is incorrect" }
         end
@@ -18,7 +18,7 @@ class Api::V1::AuthController < Api::V1::BaseController
 
         if @user.save
             token = JsonWebToken.encode({ user_id: @user.id })
-            render json: { token: token, user: { id: @user.id, email: @user.email } }, status: :created
+            render json: { token: token, user: @user.as_json }, status: :created
         else
             render json: { errors: @user.errors }, status: :unprocessable_entity
         end

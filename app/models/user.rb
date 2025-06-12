@@ -59,6 +59,11 @@ class User < ApplicationRecord
         end
     end
 
+    # Override as_json to exclude sensitive fields
+    def as_json(options = {})
+        super(options.merge(except: [ :password_digest ]))
+    end
+
   # def validate_email_domain
   #     return if email.blank?
 
