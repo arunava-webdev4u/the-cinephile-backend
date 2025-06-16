@@ -1,5 +1,6 @@
 class User < ApplicationRecord
     has_secure_password
+    before_create :set_jti
 
     before_validation :strip_whitespace
 
@@ -59,25 +60,33 @@ class User < ApplicationRecord
         end
     end
 
+    # def validate_email_domain
+    #     return if email.blank?
+
+    #     VALID_EMAIL_DOMAINS.each do |domain|
+    #         return if email.include?(domain)
+    #     end
+
+    #     errors.add(:email, "domain is not supported")
+    # end
+
+    # def create_fixed_lists
+    #     FixedList.create(user: self, name: "WatchList")
+    #     FixedList.create(user: self, name: "Watched")
+    #     FixedList.create(user: self, name: "Favourite Movies")
+    #     FixedList.create(user: self, name: "Favourite TV Shows")
+    # end
+
+    def set_jti
+        self.jti = SecureRandom.uuid
+    end
+
+    def invalidate_auth_token
+        update(jti: SecureRandom.uuid)
+    end
+
     # Override as_json to exclude sensitive fields
     def as_json(options = {})
         super(options.merge(except: [ :password_digest ]))
     end
-
-  # def validate_email_domain
-  #     return if email.blank?
-
-  #     VALID_EMAIL_DOMAINS.each do |domain|
-  #         return if email.include?(domain)
-  #     end
-
-  #     errors.add(:email, "domain is not supported")
-  # end
-
-  # def create_fixed_lists
-  #     FixedList.create(user: self, name: "WatchList")
-  #     FixedList.create(user: self, name: "Watched")
-  #     FixedList.create(user: self, name: "Favourite Movies")
-  #     FixedList.create(user: self, name: "Favourite TV Shows")
-  # end
 end
