@@ -11,7 +11,7 @@ An API-only **(Backend)** Rails application that allows users to create and mana
     - **🐘 PostgreSQL:** `17.2`
 - **🔌 External APIs:**
     - [TMDB](https://www.themoviedb.org/) (Fetch info about movies/shows)
-- **Authentication:** (Planned for future)
+- **Authentication:** Simple JWT-based authentication with Bcrypt. Also implemented JTI for token invalidation.
 
 ## 🚀 Getting Started
 ### 1️⃣ Clone the Repository
