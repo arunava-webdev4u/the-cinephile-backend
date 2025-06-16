@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
   get "api/v1/homepage/index"
+
   post "api/v1/auth/login", to: "api/v1/auth#login"
   post "api/v1/auth/register", to: "api/v1/auth#register"
+  delete "api/v1/auth/logout", to: "api/v1/auth#logout"
 
   get "api/v1/users", to: "api/v1/users#index"
   # post "api/v1/users", to: "api/v1/users#create"
