@@ -10,20 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_16_115007) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_18_161619) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "users", force: :cascade do |t|
-    t.string "email"
-    t.string "password_digest"
+    t.string "email", null: false
+    t.string "password_digest", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "first_name"
-    t.string "last_name"
-    t.date "date_of_birth"
-    t.integer "country"
+    t.string "first_name", null: false
+    t.string "last_name", null: false
+    t.string "country", null: false
     t.string "jti", null: false
+    t.date "date_of_birth", null: false
     t.index ["jti"], name: "index_users_on_jti", unique: true
   end
 end

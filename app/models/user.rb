@@ -24,6 +24,7 @@ class User < ApplicationRecord
     validate :validate_date_of_birth
 
     def age
+        return nil if date_of_birth.blank?
         ((Date.current - date_of_birth) / 365.25).floor
     end
 
@@ -43,12 +44,6 @@ class User < ApplicationRecord
 
     def validate_date_of_birth
         return if date_of_birth.blank?
-
-        unless date_of_birth.is_a?(Date)
-            errors.add(:date_of_birth, "must be a valid date")
-            return
-        end
-        # need to revisit this validation later
 
         if date_of_birth > Date.current
             errors.add(:date_of_birth, "can not be today or a future date")
