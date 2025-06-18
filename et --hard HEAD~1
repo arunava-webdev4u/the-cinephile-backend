@@ -1,0 +1,210 @@
+[33mcommit 363bb58be30968573e23f48ae21680d22412c09d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed Jun 18 22:03:00 2025 +0530
+
+    updated date column
+
+[33mcommit ecf1dea23da8c6c442fc29a89229549ab6de4336[m
+Author: Arunava Das <64685513+arunava-webdev4u@users.noreply.github.com>
+Date:   Mon Jun 16 19:32:33 2025 +0530
+
+    Update README.md
+
+[33mcommit 8d5d565221028b446e6ff60d1237353da2120f4a[m
+Merge: 5410836 ae39b72
+Author: Arunava Das <64685513+arunava-webdev4u@users.noreply.github.com>
+Date:   Mon Jun 16 19:27:30 2025 +0530
+
+    Merge pull request #8 from arunava-webdev4u/implement-jti-and-logout
+    
+    added logout method and implemented jti
+
+[33mcommit ae39b72a28b32c3d509c7a533d5b1f815faa350f[m[33m ([m[1;31morigin/implement-jti-and-logout[m[33m, [m[1;32mimplement-jti-and-logout[m[33m)[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Mon Jun 16 19:15:09 2025 +0530
+
+    added logout method and implemented jti
+
+[33mcommit 54108362502359c2259bdc7cde0e21c1a97d5a3d[m
+Merge: e59bed3 a49002e
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Fri Jun 13 13:28:39 2025 +0530
+
+    Merge branch 'main' of https://github.com/arunava-webdev4u/the-cinephile-backend
+
+[33mcommit e59bed3c94e36f61444ad2e2abc9b675d4419b89[m[33m ([m[1;32mcomplete-the-user-model[m[33m)[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Fri Jun 13 13:27:39 2025 +0530
+
+    added project metadata, started using asana
+
+[33mcommit a49002e53e418413cecc84d12ad0e610479b9239[m
+Merge: b252015 8b3e90f
+Author: Arunava Das <64685513+arunava-webdev4u@users.noreply.github.com>
+Date:   Fri Jun 13 01:47:15 2025 +0530
+
+    Merge pull request #5 from arunava-webdev4u/complete-the-user-model
+    
+    Complete the auth flow
+
+[33mcommit 8b3e90ff51592da95f74d9e99dfc0db684c2f650[m[33m ([m[1;31morigin/complete-the-user-model[m[33m)[m
+Merge: 482d2ed b252015
+Author: Arunava Das <64685513+arunava-webdev4u@users.noreply.github.com>
+Date:   Fri Jun 13 01:46:25 2025 +0530
+
+    Merge branch 'main' into complete-the-user-model
+
+[33mcommit 482d2ed9e3520d89352120a9740eb8efeee2271c[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Fri Jun 13 01:44:20 2025 +0530
+
+    include only safe parameters of the user while sending it back to cliend
+
+[33mcommit a74b89c864e906981a347f9dea25348020886c80[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Fri Jun 13 01:16:34 2025 +0530
+
+    added concern for authenticating each request
+
+[33mcommit b252015fe45cc6fa90f1d21da295cf3af7cd8314[m
+Author: Arunava Das <64685513+arunava-webdev4u@users.noreply.github.com>
+Date:   Thu Jun 5 22:35:57 2025 +0530
+
+    complete-the-user-model-validations-test-cases (#4)
+    
+    * part 1 done: imported all necessary validations & test cases from old project
+    
+    * part 2 done: implemented most important validations and added their specs
+
+[33mcommit 5c38acc413374bf31a8e0b7a573b09883925bd01[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Thu Jun 5 21:57:31 2025 +0530
+
+    part 2 done: implemented most important validations and added their specs
+
+[33mcommit f0013dad64c21bef40adb10f99e5b66aeecc4ce9[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed Jun 4 20:39:51 2025 +0530
+
+    part 1 done: imported all necessary validations & test cases from old project
+
+[33mcommit b4c3bda0a397f95f30f65c18d427a87b0f8ccfc2[m
+Merge: 9ae5c0e 4b78aba
+Author: Arunava Das <64685513+arunava-webdev4u@users.noreply.github.com>
+Date:   Wed Jun 4 16:01:26 2025 +0530
+
+    Merge pull request #3 from arunava-webdev4u/setup-rspec-for-testing
+    
+    setup-rspec-for-testing
+
+[33mcommit 4b78aba66ec4e046f41fbc9c796c2da1c41d365e[m[33m ([m[1;31morigin/setup-rspec-for-testing[m[33m, [m[1;32msetup-rspec-for-testing[m[33m)[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed Jun 4 15:13:18 2025 +0530
+
+    fixing all rubocops
+
+[33mcommit f16c513c302f60ce947a4f0a87eccc8e09fee345[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed Jun 4 15:10:15 2025 +0530
+
+    rspec setup done successfully
+
+[33mcommit 9ae5c0e5667b33c27fde36b6a80056d77cb5b57c[m[33m ([m[1;31morigin/setup-devise-gem[m[33m, [m[1;32msetup-devise-gem[m[33m)[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Tue Jun 3 21:41:54 2025 +0530
+
+    login is working
+
+[33mcommit 29203d9c158ec3d2e4fdca59f03cd6b75b50ba22[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Sun Jun 1 18:07:42 2025 +0530
+
+    register is now working with jwt
+
+[33mcommit bf5fd9ad5606fe3bdfdded696e9db3074c5cbbf8[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Sun Jun 1 13:42:24 2025 +0530
+
+    bcrypt is working now
+
+[33mcommit 06a92adb138784f996f9a7d5104481a9b362f5b3[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Sun Jun 1 13:09:13 2025 +0530
+
+    user controller & router done
+
+[33mcommit 43f07317600f62360d577eefd61063b311be37b9[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Sun Jun 1 13:08:44 2025 +0530
+
+    jwt setup in progress
+
+[33mcommit 2ee59ddaa12cbdd648d5ecd6232cb85828a997ca[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Sat May 31 00:37:50 2025 +0530
+
+    installed rspec
+
+[33mcommit 6e6b3e81e5067ae550a4e4e6455c5ec0dca743c7[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 01:35:33 2025 +0530
+
+    replacing bin/rails with bundle exec rails
+
+[33mcommit 1c6b017fa19fe86f0f987c5d4000e1b0c86816c5[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 01:30:01 2025 +0530
+
+    updated build script permissions
+
+[33mcommit 6864254227306a2991bd75229c7a7aa19f51a0d7[m
+Merge: ce52b7a 3fa9819
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 01:24:39 2025 +0530
+
+    Merge branch 'main' of https://github.com/arunava-webdev4u/the-cinephile-backend
+
+[33mcommit ce52b7a7d0969f09d2a2fb2a586404ed15d08501[m[33m ([m[1;31morigin/render-config[m[33m, [m[1;32mrender-config[m[33m)[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 01:22:43 2025 +0530
+
+    added for x86_64-linux platform
+
+[33mcommit 3fa98197ae7c9234f80852a202389bd7b58c5861[m
+Merge: 573867c e045338
+Author: Arunava Das <64685513+arunava-webdev4u@users.noreply.github.com>
+Date:   Wed May 28 01:19:08 2025 +0530
+
+    Merge pull request #2 from arunava-webdev4u/render-config
+    
+    Render config
+
+[33mcommit e0453384529b75d9f839af324d8de07c3edddfb5[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 01:18:23 2025 +0530
+
+    no pre deploy command in free
+
+[33mcommit 4fec7310294b0281082866f8cec5ea768b27da1f[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 01:15:29 2025 +0530
+
+    updated database.yml
+
+[33mcommit 917b5298c1b2c149836e1fdc2968f4f1c0d0a0a1[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 00:59:57 2025 +0530
+
+    build script added
+
+[33mcommit a4d9f5e3c185dee5edaa719da8f917eab6bd2ec8[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 00:57:58 2025 +0530
+
+    basic home page setup
+
+[33mcommit 573867c9cb60281ceea86e39752665c206c928c2[m
+Author: Arunava Das <arunava52486@gmail.com>
+Date:   Wed May 28 00:42:31 2025 +0530
+
+    initialize project
