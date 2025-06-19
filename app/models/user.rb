@@ -1,6 +1,9 @@
 class User < ApplicationRecord
+    has_many :lists, dependent: :destroy
+
     has_secure_password
     before_create :set_jti
+    after_create :create_default_lists
 
     before_validation :strip_whitespace
 
@@ -65,13 +68,6 @@ class User < ApplicationRecord
     #     errors.add(:email, "domain is not supported")
     # end
 
-    # def create_fixed_lists
-    #     FixedList.create(user: self, name: "WatchList")
-    #     FixedList.create(user: self, name: "Watched")
-    #     FixedList.create(user: self, name: "Favourite Movies")
-    #     FixedList.create(user: self, name: "Favourite TV Shows")
-    # end
-
     def set_jti
         self.jti = SecureRandom.uuid
     end
@@ -83,5 +79,18 @@ class User < ApplicationRecord
     # Override as_json to exclude sensitive fields
     def as_json(options = {})
         super(options.merge(except: [ :password_digest ]))
+    end
+
+    private
+
+    def create_default_lists
+        [ "watchlist", "watched", "favourite_movies", "favourite_tv_Shows" ].each do |name|
+            lists.create!(
+                type: "DefaultList",
+                name: name,
+                private: true,
+                description: "Your #{name} collection"
+            )
+        end
     end
 end
