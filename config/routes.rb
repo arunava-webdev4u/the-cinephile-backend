@@ -17,8 +17,8 @@ Rails.application.routes.draw do
 
       resources :users, only: [:show, :update, :destroy]
 
-      resources :default, controller: :lists, type: "DefaultList", only: [:index, :show]
-      resources :custom, controller: :lists, type: "CustomList"
+      resources :default_list, controller: :lists, type: "DefaultList", only: [:index, :show]
+      resources :custom_list, controller: :lists, type: "CustomList"
 
     end
   end
