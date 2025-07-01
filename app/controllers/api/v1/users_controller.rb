@@ -18,7 +18,7 @@ class Api::V1::UsersController < Api::V1::ApplicationController
         end
     end
 
-    def delete
+    def destroy
         @user = User.find_by(id: params[:id])
 
         unless @user
