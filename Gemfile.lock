@@ -282,7 +282,7 @@ DEPENDENCIES
   jwt
   pg (~> 1.1)
   pry-rails
-  puma (>= 5.0)
+  puma (~> 6.6)
   rails (~> 8.0.2)
   rspec-rails
   rubocop-rails-omakase

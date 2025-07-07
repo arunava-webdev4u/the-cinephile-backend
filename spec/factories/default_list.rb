@@ -1,4 +1,4 @@
 FactoryBot.define do
-  factory :list do
+  factory :default_list do
   end
 end
