@@ -1,5 +1,6 @@
 class List < ApplicationRecord
     belongs_to :user
+    before_validation :set_default_private
 
     validates :name, :type, :user_id,
         presence: true
@@ -40,6 +41,10 @@ class List < ApplicationRecord
         unless valid_types.include?(type)
             errors.add(:type, "must be one of: #{valid_types.join(', ')}")
         end
+    end
+
+    def set_default_private
+        self.private = false if private.nil?
     end
 
     # def no_suspicious_content
