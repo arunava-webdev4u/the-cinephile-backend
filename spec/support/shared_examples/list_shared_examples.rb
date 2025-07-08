@@ -64,16 +64,6 @@ RSpec.shared_examples "a list" do
                 expect(custom_list).not_to be_valid
             end
 
-            # it "is valid when type is DefaultList" do
-            #     custom_list.type = "DefaultList"
-            #     expect(custom_list).to be_valid
-            # end
-            
-            # it "is valid when type is CustomList" do
-            #     custom_list.type = "CustomList"
-            #     expect(custom_list).to be_valid
-            # end
-
             it "is not valid when type is empty" do
                 custom_list.type = ""
                 expect(custom_list).not_to be_valid
