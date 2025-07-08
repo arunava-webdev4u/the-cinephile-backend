@@ -13,16 +13,19 @@ RSpec.shared_examples "a list" do
             it "can not be empty" do
                 list.name = nil
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:name]).to include("can't be blank")
             end
 
             it "can not be longer than 50 characters long" do
                 list.name = "kjahslkdfhaskjdhfalkksjdhflakshfalksfhlskdfhalsjfhaslkfhaslkfhasdlkfhasddfhasldfhasldfasldfgasdlfgasldfgaslfgs"
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:name]).to include("is too long (maximum is 50 characters)")
             end
 
             it "can not be empty string" do
                 list.name = ""
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:name]).to include("can't be blank")
             end
 
             it "should only contain alphabets, hyphens & numbers" do
@@ -33,6 +36,7 @@ RSpec.shared_examples "a list" do
             it "should not contain any kind of special characters other than hyphen" do
                 list.name = "my#custom_list@123.?"
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:name]).to include("can only contain letters, numbers, spaces, and hyphens")
             end
         end
 
@@ -45,6 +49,7 @@ RSpec.shared_examples "a list" do
             it "can not be longer than 250 characters long" do
                 list.description = "a"*251
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:description]).to include("is too long (maximum is 250 characters)")
             end
 
             it "is valid with valid characters in the description" do
@@ -64,18 +69,21 @@ RSpec.shared_examples "a list" do
             it "is not valid with valid characters in the description" do
                 list.description = "<html><h1>hey there !</h1></html>"
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:description]).to include("contains invalid characters")
             end
         end
 
         context "type validations" do
-            it "can be empty" do
+            it "can not be empty" do
                 list.type = nil
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:type]).to include("can't be blank")
             end
 
             it "is not valid when type is empty" do
                 list.type = ""
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:type]).to include("can't be blank")
             end
         end
 
@@ -106,6 +114,7 @@ RSpec.shared_examples "a list" do
             it "is invalid without a user" do
                 list.user_id = nil
                 expect(list).not_to be_valid
+                expect(list.errors.messages[:user]).to include("must exist")
             end
 
             it "is integer only" do
