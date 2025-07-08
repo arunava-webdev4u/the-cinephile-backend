@@ -22,17 +22,16 @@ class List < ApplicationRecord
 
     scope :public_lists, -> { where(private: false) }
     scope :private_lists, -> { where(private: true) }
+    scope :default_lists, -> { where(type: 'DefaultList') }
+    scope :custom_lists, -> { where(type: 'CustomList') }
 
+    # Instance methods
     def can_be_deleted?
         true
     end
 
     def can_be_updated?
         true
-    end
-
-    def display_name
-        name
     end
 
     private

@@ -3,120 +3,140 @@
 RSpec.shared_examples "a list" do
     describe 'validations' do
         let(:user) { create(:user) }
-        let(:custom_list) { create(:custom_list, user_id: user.id) }
+        let(:list) { create(:custom_list, user_id: user.id) }
 
         it "is valid with valid attributes" do
-            expect(custom_list).to be_valid
+            expect(list).to be_valid
         end
 
         context "name validations" do
             it "can not be empty" do
-                custom_list.name = nil
-                expect(custom_list).not_to be_valid
+                list.name = nil
+                expect(list).not_to be_valid
             end
 
             it "can not be longer than 50 characters long" do
-                custom_list.name = "kjahslkdfhaskjdhfalkksjdhflakshfalksfhlskdfhalsjfhaslkfhaslkfhasdlkfhasddfhasldfhasldfasldfgasdlfgasldfgaslfgs"
-                expect(custom_list).not_to be_valid
+                list.name = "kjahslkdfhaskjdhfalkksjdhflakshfalksfhlskdfhalsjfhaslkfhaslkfhasdlkfhasddfhasldfhasldfasldfgasdlfgasldfgaslfgs"
+                expect(list).not_to be_valid
             end
 
             it "can not be empty string" do
-                custom_list.name = ""
-                expect(custom_list).not_to be_valid
+                list.name = ""
+                expect(list).not_to be_valid
             end
             
             it "should only contain alphabets, hyphens & numbers" do
-                custom_list.name = "my-custom-list 123"
-                expect(custom_list).to be_valid
+                list.name = "my-custom-list 123"
+                expect(list).to be_valid
             end
 
             it "should not contain any kind of special characters other than hyphen" do
-                custom_list.name = "my#custom_list@123.?"
-                expect(custom_list).not_to be_valid
+                list.name = "my#custom_list@123.?"
+                expect(list).not_to be_valid
             end
         end
 
         context "description validations" do
             it "can be empty" do
-                custom_list.description = nil
-                expect(custom_list).to be_valid
+                list.description = nil
+                expect(list).to be_valid
             end
 
             it "can not be longer than 250 characters long" do
-                custom_list.description = "a"*251
-                expect(custom_list).not_to be_valid
+                list.description = "a"*251
+                expect(list).not_to be_valid
             end
 
             it "is valid with valid characters in the description" do
-                custom_list.description = ""
-                expect(custom_list).to be_valid
+                valid_descriptions = [
+                    "A simple description",
+                    "Description with numbers: 123",
+                    "With punctuation: .,;?!()[]{}",
+                    "With quotes: 'single' and \"double\"",
+                    ""
+                ]
+                valid_descriptions.each do |desc|
+                    list.description = desc
+                    expect(list).to be_valid
+                end
             end
 
             it "is not valid with valid characters in the description" do
-                custom_list.description = "<html><h1>hey there !</h1></html>"
-                expect(custom_list).not_to be_valid
+                list.description = "<html><h1>hey there !</h1></html>"
+                expect(list).not_to be_valid
             end
         end
     
         context "type validations" do
             it "can be empty" do
-                custom_list.type = nil
-                expect(custom_list).not_to be_valid
+                list.type = nil
+                expect(list).not_to be_valid
             end
 
             it "is not valid when type is empty" do
-                custom_list.type = ""
-                expect(custom_list).not_to be_valid
-            end
-
-            it "is not valid when type is unknown" do
-                valid_types = ['DefaultList', 'CustomList'].freeze
-                custom_list.type = "FunnyType"
-                expect(custom_list).not_to be_valid
-                expect(custom_list.errors.messages[:type].first).to include("must be one of: #{valid_types.join(', ')}")
+                list.type = ""
+                expect(list).not_to be_valid
             end
         end
 
         context "private validations" do
             it "is valid when true" do
-                custom_list.private = true
-                expect(custom_list).to be_valid
+                list.private = true
+                expect(list).to be_valid
             end
 
             it "is valid when false" do
-                custom_list.private = false
-                expect(custom_list).to be_valid
+                list.private = false
+                expect(list).to be_valid
             end
 
             it "is valid when nil" do
-                custom_list.private = nil
-                expect(custom_list).to be_valid
+                list.private = nil
+                expect(list).to be_valid
             end
 
             it "is stores default value when nil" do
-                custom_list.private = nil
-                expect(custom_list).to be_valid
-                expect(custom_list.private).to equal(false)
+                list.private = nil
+                expect(list).to be_valid
+                expect(list.private).to equal(false)
             end
         end
     
         context "user validations" do
             it "is invalid without a user" do
-                custom_list.user_id = nil
-                expect(custom_list).not_to be_valid
+                list.user_id = nil
+                expect(list).not_to be_valid
             end
             
             it "is integer only" do
-                custom_list.user_id = "5"
-                expect(custom_list).not_to be_valid
-                expect(custom_list.errors.messages[:user]).to include("must exist")
+                list.user_id = "5"
+                expect(list).not_to be_valid
+                expect(list.errors.messages[:user]).to include("must exist")
+            end
+        end
+    end
+
+    describe 'custom validation' do
+        let(:user) { create(:user) }
+        let(:list) { create(:custom_list, user_id: user.id) }
+
+        context "list_type_must_be_valid" do
+            it "is not valid when type is unknown" do
+                valid_types = ['DefaultList', 'CustomList'].freeze
+                invalid_types = ["InvalidType", "defaultlist", "customlist", "Defaultlist", "Customlist", "defaultList", "customList"]
+
+                invalid_types.each do |invalid_type|
+                    list.type = invalid_type
+                    expect(list).not_to be_valid
+                    expect(list.errors.messages[:type].first).to include("must be one of: #{valid_types.join(', ')}")
+                end
             end
         end
     end
 
     describe 'associations' do
         let(:user) { create(:user) }
-        let(:custom_list) { create(:custom_list, user_id: user.id) }
+        let(:list) { create(:list, user_id: user.id) }
         
         it 'belongs to a user' do
         association = described_class.reflect_on_association(:user)
@@ -124,37 +144,71 @@ RSpec.shared_examples "a list" do
         end
 
         # it 'has many items' do
-        # association = described_class.reflect_on_association(:items)
-        # expect(association.macro).to eq(:has_many)
+        #     association = described_class.reflect_on_association(:items)
+        #     expect(association.macro).to eq(:has_many)
         # end
     end
   
-    # describe 'scopes' do
-    #     let!(:user1) { create(:user) }
-    #     let!(:user2) { create(:user) }
-    #     let!(:default_list1) { create(:default_list, user: user1) }
-    #     let!(:default_list2) { create(:default_list, user: user2) }
+    describe "scopes" do
+        let(:user) { create(:user) }
 
-    #     it 'returns lists for a specific user' do
-    #     expect(user1.default_lists).to include(default_list1)
-    #     expect(user1.default_lists).to_not include(default_list2)
-    #     end
-    # end
+        let(:public_list_1) { create(:custom_list, private: false, user_id: user.id) }
+        let(:private_list_1) { create(:custom_list, private: true, user_id: user.id) }
+        let(:private_list_2) { create(:custom_list, private: true, user_id: user.id) }
 
-    # describe 'business logic' do
-    #     let(:default_list) { create(:default_list) }
+        let(:default_list) { create(:default_list, user_id: user.id) }
+        let(:custom_list) { create(:custom_list, user_id: user.id) }
 
-    #     it 'cannot be deleted if it has items' do
-    #     create(:item, list: default_list)
-    #     expect { default_list.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed)
-    #     end
+        context ".public_lists" do
+            it "returns only public lists" do
+                expect(List.public_lists).to include(public_list_1)
+                expect(List.public_lists).not_to include(private_list_1, private_list_2)
+                expect(List.public_lists).to all(have_attributes(private: false))
+            end
+        end
 
-    #     it 'can be deleted if it has no items' do
-    #     expect { default_list.destroy! }.to_not raise_error
-    #     end
+        context ".private_lists" do
+            it "returns only private lists" do
+                expect(List.private_lists).to include(private_list_1, private_list_2)
+                expect(List.private_lists).not_to include(public_list_1)
+                expect(List.private_lists).to all(have_attributes(private: true))
+            end
+        end
 
-    #     it 'returns correct type' do
-    #     expect(default_list.type).to eq('DefaultList')
-    #     end
-    # end
+        context ".default_lists" do
+            it "returns only default lists" do
+                expect(List.default_lists).to include(default_list)
+                expect(List.default_lists).to all(have_attributes(type: 'DefaultList'))
+            end
+        end
+
+        context ".custom_lists" do
+            it "returns only custom lists" do
+                expect(List.custom_lists).to include(custom_list)
+                expect(List.custom_lists).to all(have_attributes(type: 'CustomList'))
+            end
+        end
+    end
+
+    describe "callbacks" do
+        let(:user) { create(:user) }
+
+        context "before_validation :set_default_private" do
+            let(:private_list_nil) { create(:custom_list, private: nil, user_id: user.id) }
+            let(:private_list_true) { create(:custom_list, private: true, user_id: user.id) }
+            let(:private_list_false) { create(:custom_list, private: false, user_id: user.id) }
+
+            it "sets private to false when nil" do
+                expect(private_list_nil.private).to be false
+            end
+
+            it "doesn't change private when already set to true" do
+                expect(private_list_true.private).to be true
+            end
+
+            it "doesn't change private when already set to false" do
+                expect(private_list_false.private).to be false
+            end
+        end
+    end
 end
