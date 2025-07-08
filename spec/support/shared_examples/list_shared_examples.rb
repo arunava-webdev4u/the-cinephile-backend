@@ -24,7 +24,7 @@ RSpec.shared_examples "a list" do
                 list.name = ""
                 expect(list).not_to be_valid
             end
-            
+
             it "should only contain alphabets, hyphens & numbers" do
                 list.name = "my-custom-list 123"
                 expect(list).to be_valid
@@ -66,7 +66,7 @@ RSpec.shared_examples "a list" do
                 expect(list).not_to be_valid
             end
         end
-    
+
         context "type validations" do
             it "can be empty" do
                 list.type = nil
@@ -101,13 +101,13 @@ RSpec.shared_examples "a list" do
                 expect(list.private).to equal(false)
             end
         end
-    
+
         context "user validations" do
             it "is invalid without a user" do
                 list.user_id = nil
                 expect(list).not_to be_valid
             end
-            
+
             it "is integer only" do
                 list.user_id = "5"
                 expect(list).not_to be_valid
@@ -122,8 +122,8 @@ RSpec.shared_examples "a list" do
 
         context "list_type_must_be_valid" do
             it "is not valid when type is unknown" do
-                valid_types = ['DefaultList', 'CustomList'].freeze
-                invalid_types = ["InvalidType", "defaultlist", "customlist", "Defaultlist", "Customlist", "defaultList", "customList"]
+                valid_types = [ 'DefaultList', 'CustomList' ].freeze
+                invalid_types = [ "InvalidType", "defaultlist", "customlist", "Defaultlist", "Customlist", "defaultList", "customList" ]
 
                 invalid_types.each do |invalid_type|
                     list.type = invalid_type
@@ -137,18 +137,18 @@ RSpec.shared_examples "a list" do
     describe 'associations' do
         let(:user) { create(:user) }
         let(:list) { create(:list, user_id: user.id) }
-        
+
         it 'belongs to a user' do
         association = described_class.reflect_on_association(:user)
         expect(association.macro).to eq(:belongs_to)
         end
 
-        # it 'has many items' do
-        #     association = described_class.reflect_on_association(:items)
-        #     expect(association.macro).to eq(:has_many)
-        # end
+      # it 'has many items' do
+      #     association = described_class.reflect_on_association(:items)
+      #     expect(association.macro).to eq(:has_many)
+      # end
     end
-  
+
     describe "scopes" do
         let(:user) { create(:user) }
 
