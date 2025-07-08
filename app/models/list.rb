@@ -26,6 +26,10 @@ class List < ApplicationRecord
     scope :custom_lists, -> { where(type: "CustomList") }
 
     # Instance methods
+    def can_be_created?
+        true
+    end
+
     def can_be_deleted?
         true
     end
