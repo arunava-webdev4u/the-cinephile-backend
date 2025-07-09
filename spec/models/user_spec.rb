@@ -185,13 +185,13 @@ RSpec.describe User, type: :model do
           expect(user).not_to be_valid
           expect(user.errors[:date_of_birth]).to include("can not be today or a future date")
         end
-        
+
         it 'is invalid if date_of_birth is more than 120 years ago' do
           user.date_of_birth = 121.years.ago.to_date
           expect(user).not_to be_valid
           expect(user.errors[:date_of_birth]).to include("are you kidding me? You are too old!")
         end
-        
+
         it 'is invalid if date_of_birth is today' do
           user.date_of_birth = Date.today
           expect(user).not_to be_valid
@@ -229,10 +229,10 @@ RSpec.describe User, type: :model do
         it 'creates default lists for the user after creation' do
           user = create(:user)
           expect(user.lists.count).to eq(4)
-          expected_names = ["watchlist", "watched", "favourite_movies", "favourite_tv_Shows"]
+          expected_names = [ "watchlist", "watched", "favourite_movies", "favourite_tv_Shows" ]
           expect(user.lists.pluck(:name)).to match_array(expected_names)
-          expect(user.lists.pluck(:type).uniq).to eq(["DefaultList"])
-          expect(user.lists.pluck(:private).uniq).to eq([false])
+          expect(user.lists.pluck(:type).uniq).to eq([ "DefaultList" ])
+          expect(user.lists.pluck(:private).uniq).to eq([ false ])
         end
       end
     end
@@ -275,21 +275,29 @@ RSpec.describe User, type: :model do
           end
         end
 
-        # it 'handles leap years correctly' do
-        #   # Born on leap day 24 years ago
-        #   leap_day = Date.new(2000, 2, 29)
-        #   user.date_of_birth = leap_day
+        context 'when date_of_birth is Feb 29 on a leap year' do
+          it 'returns the correct age on a non-leap year' do
+            user.date_of_birth = Date.new(2004, 2, 29)  # Leap year birthday
 
-        #   # Mock current date to test leap year calculation
-        #   allow(Date).to receive(:current).and_return(Date.new(2024, 3, 1))
-        #   expect(user.age).to eq(24)
-        # end
+            # Travel to a non-leap year like 2025-02-28 (day before leap day)
+            travel_to Date.new(2025, 2, 28) do
+              expect(user.age).to eq(20)
+            end
 
-        # it 'calculates age correctly near birthday' do
-        #   # Born exactly 25 years ago tomorrow
-        #   user.date_of_birth = (25.years.ago + 1.day).to_date
-        #   expect(user.age).to eq(24) # Still 24 until tomorrow
-        # end
+            # Travel to 2025-03-01 (effectively birthday celebration day)
+            travel_to Date.new(2025, 3, 1) do
+              expect(user.age).to eq(21)
+            end
+          end
+
+          it 'returns the correct age on a leap year' do
+            user.date_of_birth = Date.new(2004, 2, 29)
+
+            travel_to Date.new(2024, 2, 29) do
+              expect(user.age).to eq(20)
+            end
+          end
+        end
       end
 
       describe '#adult?' do
@@ -311,7 +319,17 @@ RSpec.describe User, type: :model do
     end
 
     describe 'associations' do
-      # Add association tests here if you have any associations in the future
+      let(:user) { create(:user) }
+      let(:list) { create(:list, user_id: user.id) }
+
+      it 'has many items lists' do
+        association = described_class.reflect_on_association(:lists)
+        expect(association.macro).to eq(:has_many)
+      end
+
+      it "has dependent destroy on lists" do
+        expect { user.destroy }.to change { List.count }.by(-user.lists.count)
+      end
     end
 
     describe 'scopes' do

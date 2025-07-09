@@ -29,8 +29,17 @@ class User < ApplicationRecord
         return nil if date_of_birth.blank?
 
         today = Date.current
+
+        birthday_this_year = begin
+            date_of_birth.change(year: today.year)
+        rescue Date::Error
+            # If birthday is Feb 29 and current year is not leap year,
+            # use March 1st as the effective birthday
+            Date.new(today.year, 3, 1)
+        end
+
         age = today.year - date_of_birth.year
-        age -= 1 if today < date_of_birth + age.years
+        age -= 1 if today < birthday_this_year
         age
     end
 
