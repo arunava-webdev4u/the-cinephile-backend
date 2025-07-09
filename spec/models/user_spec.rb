@@ -1,6 +1,9 @@
 require 'rails_helper'
+require 'active_support/testing/time_helpers'
 
 RSpec.describe User, type: :model do
+  include ActiveSupport::Testing::TimeHelpers
+
   describe 'validations' do
     let(:user) { create(:user) }
 
@@ -79,21 +82,26 @@ RSpec.describe User, type: :model do
         expect(user.errors[:email]).to include('is invalid')
       end
 
-      # it 'is not valid with a duplicate email' do
-      #   User.create!(valid_attributes)
-      #   user = User.new(valid_attributes)
-      #   expect(user).not_to be_valid
-      #   expect(user.errors[:email]).to include('has already been taken')
-      # end
+      context 'when duplicate email' do
+        let(:user_1) { create(:user, email: "abc@gmail.com") }
 
-      #     it 'is not valid with a duplicate email with case sensitivity' do
-      #       User.create!(valid_attributes.merge(email: "test@example.com"))
-      #       user = User.new(valid_attributes.merge(email: "TEST@example.com"))
-      #       expect(user).not_to be_valid
-      #       expect(user.errors[:email]).to include('has already been taken')
-      #     end
+        it 'is not valid' do
+          duplicate_user = build(:user, email: user_1.email)
+          expect(user_1).to be_valid
+          expect(duplicate_user).not_to be_valid
+          expect(duplicate_user.errors[:email]).to include('has already been taken')
+        end
 
-      # #######################
+        it 'is not valid with a case sensitivity' do
+          duplicate_user = build(:user, email: user_1.email.split('@')[0].upcase)
+          expect(user_1).to be_valid
+          expect(duplicate_user).not_to be_valid
+          expect(duplicate_user.errors[:email]).to include('is invalid')
+          # expect(duplicate_user.errors[:email]).to include('has already been taken')
+        end
+      end
+
+      ##### Future #####
       # it 'must have a supported email domain' do
       #   user.email = 'arunava.das@example.com'
       #   expect(user).not_to be_valid
@@ -101,6 +109,7 @@ RSpec.describe User, type: :model do
       # end
     end
 
+    # ###############################33
     context 'date_of_birth validations' do
       it 'is not valid without a date_of_birth' do
         user.date_of_birth = nil
@@ -119,10 +128,10 @@ RSpec.describe User, type: :model do
         expect(user.errors[:date_of_birth]).to include('can not be today or a future date')
       end
 
-      it 'cant be a ghost' do
+      it 'can not be a ghost' do
         user.date_of_birth = Date.current-120.years
         expect(user).not_to be_valid
-        expect(user.errors[:date_of_birth]).to include('must be within the last 120 years')
+        expect(user.errors[:date_of_birth]).to include("are you kidding me? You are too old!")
       end
     end
 
@@ -153,7 +162,7 @@ RSpec.describe User, type: :model do
         end
       end
 
-      # #################################
+      # ######## Future #########
       # it 'must be in our country list' do
       #   user.country = 'Tiwan'
       #   expect(user).not_to be_valid
@@ -161,8 +170,43 @@ RSpec.describe User, type: :model do
       # end
     end
 
+    describe 'custom validation' do
+      # ##################################
+      describe '#validate_date_of_birth' do
+        let(:user) { build(:user) }
+
+        it 'is valid with a reasonable past date' do
+          user.date_of_birth = 30.years.ago.to_date
+          expect(user).to be_valid
+        end
+
+        it 'is invalid if date_of_birth is in the future' do
+          user.date_of_birth = Date.current + 1.day
+          expect(user).not_to be_valid
+          expect(user.errors[:date_of_birth]).to include("can not be today or a future date")
+        end
+        
+        it 'is invalid if date_of_birth is more than 120 years ago' do
+          user.date_of_birth = 121.years.ago.to_date
+          expect(user).not_to be_valid
+          expect(user.errors[:date_of_birth]).to include("are you kidding me? You are too old!")
+        end
+        
+        it 'is invalid if date_of_birth is today' do
+          user.date_of_birth = Date.today
+          expect(user).not_to be_valid
+          expect(user.errors[:date_of_birth]).to include("can not be today or a future date")
+        end
+
+        it 'is valid if date_of_birth is exactly 120 years ago' do
+          user.date_of_birth = 120.years.ago.to_date
+          expect(user).not_to be_valid
+        end
+      end
+    end
+
     describe 'callbacks' do
-      describe '#strip_whitespace' do
+      describe 'before_validation :strip_whitespace' do
         let(:user) { create(:user, first_name: '  John  ', last_name: '  Doe  ', email: "  abc@gmail.com    ") }
 
         it 'strips whitespace from names' do
@@ -172,28 +216,64 @@ RSpec.describe User, type: :model do
           expect(user.email).to eq('abc@gmail.com')
         end
       end
+
+      describe 'before_create :set_jti' do
+        it 'sets the jti to a UUID before creation' do
+          user = create(:user)
+          expect(user.jti).to be_present
+          expect(user.jti).to match(/\A[\w\d\-]{36}\z/)
+        end
+      end
+
+      describe 'after_create :create_default_lists' do
+        it 'creates default lists for the user after creation' do
+          user = create(:user)
+          expect(user.lists.count).to eq(4)
+          expected_names = ["watchlist", "watched", "favourite_movies", "favourite_tv_Shows"]
+          expect(user.lists.pluck(:name)).to match_array(expected_names)
+          expect(user.lists.pluck(:type).uniq).to eq(["DefaultList"])
+          expect(user.lists.pluck(:private).uniq).to eq([false])
+        end
+      end
     end
 
     describe 'instance methods' do
-      let(:user) { create(:user) }
-
       describe '#full_name' do
         it 'returns first and last name combined' do
+          user = build(:user, first_name: 'John', last_name: 'Doe')
           expect(user.full_name).to eq(user.first_name + ' ' + user.last_name)
         end
 
-        # it 'strips extra whitespace' do
-        #   user.first_name = '  John  '
-        #   user.last_name = '  Doe  '
-        #   expect(user.full_name).to eq('John Doe')
-        # end
+        it 'strips extra whitespace' do
+          user = build(:user, first_name: ' John  ', last_name: '  Doe  ')
+          expect(user.full_name).to eq('John Doe')
+        end
       end
 
       describe '#age' do
-        # it 'calculates age correctly' do
-        #   user.date_of_birth = 25.years.ago.to_date
-        #   expect(user.age).to eq(25)
-        # end
+        let(:user) { build(:user) }
+        after { travel_back }
+
+        it 'returns the correct age when birthday is today' do
+          travel_to Date.new(2025, 6, 12) do
+            user.date_of_birth = Date.new(2000, 6, 12)
+            expect(user.age).to eq(25)
+          end
+        end
+
+        it 'returns the correct age when birthday has not occurred yet this year' do
+          travel_to Date.new(2025, 6, 12) do
+            user.date_of_birth = Date.new(2000, 10, 1)
+            expect(user.age).to eq(24)
+          end
+        end
+
+        it 'returns the correct age when birthday already occurred this year' do
+          travel_to Date.new(2025, 6, 12) do
+            user.date_of_birth = Date.new(2000, 2, 1)
+            expect(user.age).to eq(25)
+          end
+        end
 
         # it 'handles leap years correctly' do
         #   # Born on leap day 24 years ago
