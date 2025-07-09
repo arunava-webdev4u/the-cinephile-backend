@@ -144,12 +144,12 @@ RSpec.shared_examples "a list" do
     end
 
     describe 'associations' do
-        let(:user) { create(:user) }
-        let(:list) { create(:list, user_id: user.id) }
+        # let(:user) { create(:user) }
+        # let(:list) { create(:list, user_id: user.id) }
 
         it 'belongs to a user' do
-        association = described_class.reflect_on_association(:user)
-        expect(association.macro).to eq(:belongs_to)
+            association = described_class.reflect_on_association(:user)
+            expect(association.macro).to eq(:belongs_to)
         end
 
       # it 'has many items' do

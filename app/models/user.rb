@@ -2,10 +2,9 @@ class User < ApplicationRecord
     has_many :lists, dependent: :destroy
 
     has_secure_password
+    before_validation :strip_whitespace
     before_create :set_jti
     after_create :create_default_lists
-
-    before_validation :strip_whitespace
 
     validates :first_name, :last_name, :email, :date_of_birth, :country,
         presence: true
@@ -28,34 +27,32 @@ class User < ApplicationRecord
 
     def age
         return nil if date_of_birth.blank?
-        ((Date.current - date_of_birth) / 365.25).floor
+
+        today = Date.current
+
+        birthday_this_year = begin
+            date_of_birth.change(year: today.year)
+        rescue Date::Error
+            # If birthday is Feb 29 and current year is not leap year,
+            # use March 1st as the effective birthday
+            Date.new(today.year, 3, 1)
+        end
+
+        age = today.year - date_of_birth.year
+        age -= 1 if today < birthday_this_year
+        age
     end
 
     def full_name
-        (self.first_name + " " + self.last_name).strip
+        self.first_name.strip + " " + self.last_name.strip
     end
 
     def adult?
         age && age >= 18
     end
 
-    def strip_whitespace
-        self.first_name = first_name.strip if first_name.present?
-        self.last_name = last_name.strip if last_name.present?
-        self.email = email.strip if email.present?
-    end
-
-    def validate_date_of_birth
-        return if date_of_birth.blank?
-
-        if date_of_birth > Date.current
-            errors.add(:date_of_birth, "can not be today or a future date")
-            return
-        end
-
-        if date_of_birth < 120.years.ago
-            errors.add(:date_of_birth, "must be within the last 120 years")
-        end
+    def invalidate_auth_token
+        update(jti: SecureRandom.uuid)
     end
 
     # def validate_email_domain
@@ -68,29 +65,41 @@ class User < ApplicationRecord
     #     errors.add(:email, "domain is not supported")
     # end
 
-    def set_jti
-        self.jti = SecureRandom.uuid
-    end
-
-    def invalidate_auth_token
-        update(jti: SecureRandom.uuid)
-    end
-
-    # Override as_json to exclude sensitive fields
-    def as_json(options = {})
-        super(options.merge(except: [ :password_digest ]))
-    end
-
     private
 
+    # Callbacks
     def create_default_lists
         [ "watchlist", "watched", "favourite_movies", "favourite_tv_Shows" ].each do |name|
             lists.create!(
                 type: "DefaultList",
                 name: name,
-                private: true,
+                private: false,
                 description: "Your #{name} collection"
             )
+        end
+    end
+
+    def set_jti
+        self.jti = SecureRandom.uuid
+    end
+
+    def strip_whitespace
+        self.first_name = first_name.strip if first_name.present?
+        self.last_name = last_name.strip if last_name.present?
+        self.email = email.strip if email.present?
+    end
+
+    # Custom Validations
+    def validate_date_of_birth
+        return if date_of_birth.blank?
+
+        if date_of_birth >= Date.current
+            errors.add(:date_of_birth, "can not be today or a future date")
+            return
+        end
+
+        if date_of_birth < 120.years.ago
+            errors.add(:date_of_birth, "are you kidding me? You are too old!")
         end
     end
 end
