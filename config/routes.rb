@@ -15,6 +15,15 @@ Rails.application.routes.draw do
       end
 
       resources :users, only: [ :show, :update, :destroy ]
+      resources :search, only: [ :index ] do
+        collection do
+          get :trending
+          get :popular
+          get :top_rated
+          get :upcoming
+          get :now_playing
+        end
+      end
 
       resources :default_list, controller: :lists, type: "DefaultList", only: [ :index, :show ]
       resources :custom_list, controller: :lists, type: "CustomList"
