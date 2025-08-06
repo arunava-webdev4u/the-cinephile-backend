@@ -3,66 +3,92 @@ class TmdbService
 
     BASE_URL_V3 = "https://api.themoviedb.org/3"
 
-    # https://developer.themoviedb.org/reference/person-popular-list  - TODO
-    # http://image.tmdb.org/t/p/w200/{img}
-
-    
-    # type can be "movie", "tv_show", or "person"
+    # Search movie/tv
     def search_by_name(query, type)
-        return tmdb_request("search/#{type}?query=#{query}")
+        tmdb_request("search/#{type}?query=#{query}")
     end
     def search_by_id(id, type)
-        return tmdb_request("#{type}/#{id}")
+        tmdb_request("#{type}/#{id}")
     end
-    # Trendings
+
+    # Trendings movie/tv
     def trending
-        return "trending"
+        "trending"
     end
 
-    # Movie Lists
-    # def popular
-    #     url = URI("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc")
-    #     tmdb_request(url)
-    # end
-    # def top_rated
-    #     url = URI("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=vote_average.desc&without_genres=99,10755&vote_count.gte=200")
-    #     tmdb_request(url)
-    # end
-    # def upcoming
-    #     url = URI("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&with_release_type=2|3&release_date.gte={min_date}&release_date.lte={max_date}")
-    #     tmdb_request(url)
-    # end
-    # def now_playing
-    #     url = URI("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&with_release_type=2|3&release_date.gte={min_date}&release_date.lte={max_date}")
-    #     tmdb_request(url)
-    # end
+    # Collection ()
+    # TV Seasons ()
 
+    # Discover movie/tv
+    def discover(type)
+        tmdb_request("discover/#{type}")
+    end
 
-    # TV Shows Lists
-    # def airing_today
-    #     url = URI("https://api.themoviedb.org/3/tv/airing_today?language=en-US&page=1")
-    #     tmdb_request(url)
-    # end
-    # def on_the_air
-    #     url = URI("https://api.themoviedb.org/3/tv/on_the_air?language=en-US&page=1")
-    #     tmdb_request(url)
-    # end
-    # def popular
-    #     url = URI("https://api.themoviedb.org/3/tv/popular?language=en-US&page=1")
-    #     tmdb_request(url)
-    # end
-    # def top_rated
-    #     url = URI("https://api.themoviedb.org/3/tv/top_rated?language=en-US&page=1")
-    #     tmdb_request(url)
-    # end
+    # Genre movie/tv
+    def genre(type)
+        tmdb_request("genre/#{type}/list")
+    end
 
+    # Lists movies/tv/persons
+    def lists(type, topic)
+      # https://api.themoviedb.org/3/movie/now_playing
+      # https://api.themoviedb.org/3/movie/popular
+      # https://api.themoviedb.org/3/movie/top_rated
+      # https://api.themoviedb.org/3/movie/upcoming
+
+      # https://api.themoviedb.org/3/person/popular
+
+      # https://api.themoviedb.org/3/tv/airing_today
+      # https://api.themoviedb.org/3/tv/on_the_air
+      # https://api.themoviedb.org/3/tv/popular
+      # https://api.themoviedb.org/3/tv/top_rated
+    end
+
+    # Trending movie/tv
+    def trending(type)
+      # https://api.themoviedb.org/3/trending/all/{time_window}
+      # https://api.themoviedb.org/3/trending/movie/{time_window}
+      # https://api.themoviedb.org/3/trending/person/{time_window}
+      # https://api.themoviedb.org/3/trending/tv/{time_window}
+    end
+
+    # Credits movie/tv
+    def credits(type, id)
+      # https://developer.themoviedb.org/reference/movie-credits
+      # https://developer.themoviedb.org/reference/tv-series-credits
+    end
+
+    # Images movie/tv
+    def images(type, id)
+      # https://developer.themoviedb.org/reference/movie-images
+      # https://developer.themoviedb.org/reference/tv-series-images
+    end
+
+    # External ids movie/tv
+    def external_ids(type, id)
+      # https://developer.themoviedb.org/reference/movie-external-ids
+      # https://developer.themoviedb.org/reference/tv-series-external-ids
+    end
+
+    # Recommendations movie/tv
+    def recommendations(type, id)
+      # https://developer.themoviedb.org/reference/movie-recommendations
+      # https://developer.themoviedb.org/reference/tv-series-recommendations
+    end
+
+    # Watch providers movie/tv
+    def watch_providers(type, id)
+      # https://developer.themoviedb.org/reference/movie-watch-providers
+      # https://developer.themoviedb.org/reference/tv-series-watch-providers
+    end
+
+    # Videos movie/tv
+    def videos(type, id)
+      # https://developer.themoviedb.org/reference/movie-videos
+      # https://developer.themoviedb.org/reference/tv-series-videos
+    end
 
     private
-
-    # def search_by_name(query, type)
-    #     url = URI("https://api.themoviedb.org/3/search/#{type}?query=#{query}&include_adult=false&language=en-US&page=1")
-    #     tmdb_request(url)
-    # end
 
     def tmdb_request(resource_path)
         url = URI("#{BASE_URL_V3}/#{resource_path}")
