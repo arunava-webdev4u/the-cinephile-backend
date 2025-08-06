@@ -15,8 +15,10 @@ Rails.application.routes.draw do
       end
 
       resources :users, only: [ :show, :update, :destroy ]
-      resources :search, only: [ :index ] do
+      resources :search, only: [] do
         collection do
+          get :name
+          get :id
           get :trending
           get :popular
           get :top_rated

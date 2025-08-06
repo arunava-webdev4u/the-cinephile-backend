@@ -1,15 +1,32 @@
 class Api::V1::SearchController < Api::V1::BaseController
-  def index
+  before_action :initialize_tmdb_service
+  
+  def name
+    render json: { error: "Parameters are missing" }, status: :bad_request unless check_params(params)
+    
+    type = params[:type]
     query = params[:query]
+
+    result = tmdb_service.search_by_name(query, type)
+
     # if query.present?
     #   @movies = tmdb_service.search_movies(query)
     #   render json: @movies
     # else
-    #   render json: { error: "Query parameter is missing" }, status: :bad_request
     # end
-    render json: { message: "index" }
+    render json: { query: query, type: type, result: result }
   end
 
+  def id
+    render json: { error: "Parameters are missing" }, status: :bad_request unless check_params(params)
+    type = params[:type]
+    tmdb_id = params[:tmdb_id]
+
+    result = tmdb_service.search_by_id(tmdb_id, type)
+    render json: { tmdb_id: tmdb_id, type: type, result: result }
+
+  end
+  
   def trending
       # @trending_movies = tmdb_service.trending_movies
 
@@ -64,4 +81,21 @@ class Api::V1::SearchController < Api::V1::BaseController
     # end
     render json: { message: "now_playing" }
   end
+
+  def initialize_tmdb_service
+    @tmdb_service ||= TmdbService.new
+  end
+
+  def tmdb_service
+    @tmdb_service
+  end
+
+  def check_params(params)
+    if params[:type].present?
+      return params[:query].present? || params[:tmdb_id].present?
+    end
+    return false
+  end
+
+
 end
