@@ -26,7 +26,7 @@ class User < ApplicationRecord
     validate :validate_date_of_birth
 
     def as_json(options = {})
-        super({ except: [:password_digest] }.merge(options))
+        super({ except: [ :password_digest ] }.merge(options))
     end
 
     def age

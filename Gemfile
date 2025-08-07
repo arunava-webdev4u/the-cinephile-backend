@@ -3,7 +3,7 @@ source "https://rubygems.org"
 gem "rails", "~> 8.0.2"
 gem "pg", "~> 1.1"
 gem "puma", "~> 6.6"
-
+gem "faraday", "~> 2.7"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # gem "jbuilder"
 
@@ -31,6 +31,8 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "rack-cors"
 
 group :development, :test do
+  gem "dotenv-rails", "~> 3.1.8"
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
 
