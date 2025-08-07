@@ -1,105 +1,115 @@
 class TmdbService
-    require "net/http"
+  require "net/http"
 
-    BASE_URL_V3 = "https://api.themoviedb.org/3"
+  BASE_URL_V3 = "https://api.themoviedb.org/3"
+  VALID_SEARCH_TYPES = %w[movie tv person].freeze
 
-    # Search movie/tv
-    def search_by_name(query, type)
-        tmdb_request("search/#{type}?query=#{query}")
-    end
-    def search_by_id(id, type)
-        tmdb_request("#{type}/#{id}")
-    end
+  # Custom exceptions for better error handling
+  class TmdbError < StandardError; end
+  class AuthenticationError < TmdbError; end
 
-    # Trendings movie/tv
-    def trending
-        "trending"
-    end
+  def initialize
+    @api_token = ENV["TMDB_API_READ_ACCESS_TOKEN"]
+    raise AuthenticationError, "TMDB API token not found" if @api_token.blank?
+  end
 
-    # Collection ()
-    # TV Seasons ()
+  # Search movie/tv
+  def search_by_name(query, type)
+      tmdb_request("search/#{type}?query=#{query}")
+  end
+  def search_by_id(id, type)
+      tmdb_request("#{type}/#{id}")
+  end
 
-    # Discover movie/tv
-    def discover(type)
-        tmdb_request("discover/#{type}")
-    end
+  # Trendings movie/tv
+  def trending
+      "trending"
+  end
 
-    # Genre movie/tv
-    def genre(type)
-        tmdb_request("genre/#{type}/list")
-    end
+  # Collection ()
+  # TV Seasons ()
 
-    # Lists movies/tv/persons
-    def lists(type, topic)
-      # https://api.themoviedb.org/3/movie/now_playing
-      # https://api.themoviedb.org/3/movie/popular
-      # https://api.themoviedb.org/3/movie/top_rated
-      # https://api.themoviedb.org/3/movie/upcoming
+  # Discover movie/tv
+  def discover(type)
+      tmdb_request("discover/#{type}")
+  end
 
-      # https://api.themoviedb.org/3/person/popular
+  # Genre movie/tv
+  def genre(type)
+      tmdb_request("genre/#{type}/list")
+  end
 
-      # https://api.themoviedb.org/3/tv/airing_today
-      # https://api.themoviedb.org/3/tv/on_the_air
-      # https://api.themoviedb.org/3/tv/popular
-      # https://api.themoviedb.org/3/tv/top_rated
-    end
+  # Lists movies/tv/persons
+  def lists(type, topic)
+    # https://api.themoviedb.org/3/movie/now_playing
+    # https://api.themoviedb.org/3/movie/popular
+    # https://api.themoviedb.org/3/movie/top_rated
+    # https://api.themoviedb.org/3/movie/upcoming
 
-    # Trending movie/tv
-    def trending(type)
-      # https://api.themoviedb.org/3/trending/all/{time_window}
-      # https://api.themoviedb.org/3/trending/movie/{time_window}
-      # https://api.themoviedb.org/3/trending/person/{time_window}
-      # https://api.themoviedb.org/3/trending/tv/{time_window}
-    end
+    # https://api.themoviedb.org/3/person/popular
 
-    # Credits movie/tv
-    def credits(type, id)
-      # https://developer.themoviedb.org/reference/movie-credits
-      # https://developer.themoviedb.org/reference/tv-series-credits
-    end
+    # https://api.themoviedb.org/3/tv/airing_today
+    # https://api.themoviedb.org/3/tv/on_the_air
+    # https://api.themoviedb.org/3/tv/popular
+    # https://api.themoviedb.org/3/tv/top_rated
+  end
 
-    # Images movie/tv
-    def images(type, id)
-      # https://developer.themoviedb.org/reference/movie-images
-      # https://developer.themoviedb.org/reference/tv-series-images
-    end
+  # Trending movie/tv
+  def trending(type)
+    # https://api.themoviedb.org/3/trending/all/{time_window}
+    # https://api.themoviedb.org/3/trending/movie/{time_window}
+    # https://api.themoviedb.org/3/trending/person/{time_window}
+    # https://api.themoviedb.org/3/trending/tv/{time_window}
+  end
 
-    # External ids movie/tv
-    def external_ids(type, id)
-      # https://developer.themoviedb.org/reference/movie-external-ids
-      # https://developer.themoviedb.org/reference/tv-series-external-ids
-    end
+  # Credits movie/tv
+  def credits(type, id)
+    # https://developer.themoviedb.org/reference/movie-credits
+    # https://developer.themoviedb.org/reference/tv-series-credits
+  end
 
-    # Recommendations movie/tv
-    def recommendations(type, id)
-      # https://developer.themoviedb.org/reference/movie-recommendations
-      # https://developer.themoviedb.org/reference/tv-series-recommendations
-    end
+  # Images movie/tv
+  def images(type, id)
+    # https://developer.themoviedb.org/reference/movie-images
+    # https://developer.themoviedb.org/reference/tv-series-images
+  end
 
-    # Watch providers movie/tv
-    def watch_providers(type, id)
-      # https://developer.themoviedb.org/reference/movie-watch-providers
-      # https://developer.themoviedb.org/reference/tv-series-watch-providers
-    end
+  # External ids movie/tv
+  def external_ids(type, id)
+    # https://developer.themoviedb.org/reference/movie-external-ids
+    # https://developer.themoviedb.org/reference/tv-series-external-ids
+  end
 
-    # Videos movie/tv
-    def videos(type, id)
-      # https://developer.themoviedb.org/reference/movie-videos
-      # https://developer.themoviedb.org/reference/tv-series-videos
-    end
+  # Recommendations movie/tv
+  def recommendations(type, id)
+    # https://developer.themoviedb.org/reference/movie-recommendations
+    # https://developer.themoviedb.org/reference/tv-series-recommendations
+  end
 
-    private
+  # Watch providers movie/tv
+  def watch_providers(type, id)
+    # https://developer.themoviedb.org/reference/movie-watch-providers
+    # https://developer.themoviedb.org/reference/tv-series-watch-providers
+  end
 
-    def tmdb_request(resource_path)
-        url = URI("#{BASE_URL_V3}/#{resource_path}")
-        http = Net::HTTP.new(url.host, url.port)
-        http.use_ssl = true
+  # Videos movie/tv
+  def videos(type, id)
+    # https://developer.themoviedb.org/reference/movie-videos
+    # https://developer.themoviedb.org/reference/tv-series-videos
+  end
 
-        request = Net::HTTP::Get.new(url)
-        request["accept"] = "application/json"
-        request["Authorization"] = "Bearer " + ENV["TMDB_API_READ_ACCESS_TOKEN"]
+  private
 
-        response = http.request(request)
-        JSON.parse(response.body)
-    end
+  def tmdb_request(resource_path)
+      url = URI("#{BASE_URL_V3}/#{resource_path}")
+      http = Net::HTTP.new(url.host, url.port)
+      http.use_ssl = true
+
+      request = Net::HTTP::Get.new(url)
+      request["accept"] = "application/json"
+      request["Authorization"] = "Bearer " + @api_token
+
+      response = http.request(request)
+      JSON.parse(response.body)
+  end
 end

@@ -1,29 +1,17 @@
 class Api::V1::SearchController < Api::V1::BaseController
   before_action :initialize_tmdb_service
+  before_action :validate_search_params, only: [ :name, :id ]
 
   def name
-    render json: { error: "Parameters are missing" }, status: :bad_request unless check_params(params)
+    result = @tmdb_service.search_by_name(search_params[:query], search_params[:type])
 
-    type = params[:type]
-    query = params[:query]
-
-    result = tmdb_service.search_by_name(query, type)
-
-    # if query.present?
-    #   @movies = tmdb_service.search_movies(query)
-    #   render json: @movies
-    # else
-    # end
-    render json: { query: query, type: type, result: result }
+    render json: { query: search_params[:query], type: search_params[:type], result: result }, status: :ok
   end
 
   def id
-    render json: { error: "Parameters are missing" }, status: :bad_request unless check_params(params)
-    type = params[:type]
-    tmdb_id = params[:tmdb_id]
+    result = @tmdb_service.search_by_id(search_params[:tmdb_id], search_params[:type])
 
-    result = tmdb_service.search_by_id(tmdb_id, type)
-    render json: { tmdb_id: tmdb_id, type: type, result: result }
+    render json: { tmdb_id: search_params[:tmdb_id], type: search_params[:type], result: result }, status: :ok
   end
 
   def trending
@@ -81,18 +69,34 @@ class Api::V1::SearchController < Api::V1::BaseController
     render json: { message: "now_playing" }
   end
 
+  private
   def initialize_tmdb_service
     @tmdb_service ||= TmdbService.new
   end
 
-  def tmdb_service
-    @tmdb_service
+  def search_params
+    params.permit(:query, :tmdb_id, :type)
   end
+  # def tmdb_service
+  #   @tmdb_service
+  # end
 
-  def check_params(params)
-    if params[:type].present?
-      return params[:query].present? || params[:tmdb_id].present?
+  def validate_search_params
+    unless params[:type].present?
+      render json: {
+        success: false,
+        error: "Type parameter is required",
+        valid_types: TmdbService::VALID_SEARCH_TYPES
+      }, status: :bad_request
+      return
     end
-    false
+
+    if params[:query].blank? && params[:tmdb_id].blank?
+      render json: {
+        success: false,
+        error: "Either query or tmdb_id parameter is not present"
+      }, status: :bad_request
+      nil
+    end
   end
 end
