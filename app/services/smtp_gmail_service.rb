@@ -87,7 +87,7 @@ class SmtpGmailService
         end
     end
 
-def build_welcome_email(user)
+    def build_welcome_email(user)
         # Pre-generate template content to avoid context issues
         html_content = welcome_email_html_template(user)
         text_content = welcome_email_text_template(user)
@@ -194,36 +194,74 @@ def build_welcome_email(user)
         <!DOCTYPE html>
         <html>
             <head>
-            <meta charset="UTF-8">
-            <title>Welcome to #{app_name}</title>
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
-                .content { padding: 20px; background-color: #f9f9f9; }
-                .button { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; }
-                .footer { margin-top: 20px; padding: 10px; font-size: 12px; color: #666; text-align: center; }
-            </style>
+                <meta charset="UTF-8">
+                <title>Welcome to #{app_name}</title>
+
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                    }
+                    .header { 
+                        background-image: url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+                        background-size: cover;
+                        background-position: center;
+                        color: white; 
+                        padding: 40px 20px; 
+                        text-align: center;
+                    }
+                    .content {
+                        padding: 20px; background-color: #f9f9f9;
+                    }
+                    .button {
+                        display: inline-block;
+                        padding: 10px 20px;
+                        background-color: #4CAF50;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 5px;
+                    }
+                    .footer {
+                        margin-top: 20px;
+                        padding: 10px;
+                        font-size: 12px;
+                        color: #666;
+                        text-align: center;
+                    }
+                    .button-container {
+                        display: flex;
+                        justify-content: center;
+                    }
+                    h2 {
+                        text-align: center;
+                    }
+                </style>
             </head>
+
             <body>
-            <div class="container">
-                <div class="header">
-                <h1>Welcome to #{app_name}!</h1>
+                <div class="container">
+                    <div class="header">
+                        <h1>Welcome to #{app_name}!</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Hello #{user.first_name}!</h2>
+                        <p>Thank you for signing up with #{app_name}. We're excited to have you on board!</p>
+                        <p>You can now start exploring our features and make the most out of your experience.</p>
+                        <p class="button-container">
+                            <a href="#{app_link}" class="button">Get Started</a>
+                        </p>
+                    </div>
+                    <div class="footer">
+                        <p>© #{Date.current.year} #{app_name}. All rights reserved.</p>
+                        <p>If you didn't create an account with us, please ignore this email.</p>
+                    </div>
                 </div>
-                <div class="content">
-                <h2>Hello #{user.first_name}!</h2>
-                <p>Thank you for signing up with #{app_name}. We're excited to have you on board!</p>
-                <p>You can now start exploring our features and make the most out of your experience.</p>
-                <p>If you have any questions or need help getting started, don't hesitate to contact our support team.</p>
-                <p>
-                    <a href="#{app_link}" class="button">Get Started</a>
-                </p>
-                </div>
-                <div class="footer">
-                <p>© #{Date.current.year} #{app_name}. All rights reserved.</p>
-                <p>If you didn't create an account with us, please ignore this email.</p>
-                </div>
-            </div>
             </body>
         </html>
         HTML
@@ -238,8 +276,6 @@ def build_welcome_email(user)
         Thank you for signing up with #{app_name}. We're excited to have you on board!
 
         You can now start exploring our features and make the most out of your experience.
-
-        If you have any questions or need help getting started, don't hesitate to contact our support team.
 
         Get started: #{app_link}
 
