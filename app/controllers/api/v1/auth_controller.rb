@@ -19,7 +19,7 @@ class Api::V1::AuthController < Api::V1::BaseController
         if @user.save
             token = JsonWebToken.encode({ user_id: @user.id, jti: @user.jti })
             render json: { token: token, user: @user.as_json }, status: :created
-            SmtpGmailService.new.send_welcome_email(@user)
+            SmtpGmailService.new.send_welcome_email(@user) if Rails.env.production?
         else
             render json: { errors: @user.errors }, status: :unprocessable_entity
         end

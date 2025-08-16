@@ -11,7 +11,7 @@ class Api::V1::SearchController < Api::V1::BaseController
   def id
     result = @tmdb_service.search_by_id(search_params[:tmdb_id], search_params[:type])
 
-    render json: { tmdb_id: search_params[:tmdb_id], type: search_params[:type], result: result }, status: :ok
+    render json: { result: result }, status: :ok
   end
 
   def trending
