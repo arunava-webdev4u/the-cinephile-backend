@@ -10,6 +10,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       namespace :auth do
         post :register
+        post :verify_email
         post :login
         delete :logout
       end
