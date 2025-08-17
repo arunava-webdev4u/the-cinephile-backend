@@ -57,24 +57,22 @@ class SmtpGmailService
     #     end
     # end
 
-    # def send_verification_email(user, verification_token)
-    #     raise EmailError, "User cannot be nil" if user.nil?
-    #     raise EmailError, "Verification token cannot be blank" if verification_token.blank?
+    def send_verification_email(registration_details)
+        raise EmailError, "Details cannot be nil" if registration_details.nil?
 
-    #     begin
-    #     mail = build_verification_email(user, verification_token)
-    #     deliver_email(mail)
+        begin
+            mail = build_verification_email(registration_details)
+            deliver_email(mail)
 
-    #     Rails.logger.info "Verification email sent successfully to #{user.email}"
-    #     { success: true, message: "Verification email sent successfully" }
+            Rails.logger.info "Verification email sent successfully to #{registration_details.email}"
+            { success: true, message: "Verification email sent successfully" }
 
-    #     rescue => e
-    #     Rails.logger.error "Failed to send verification email to #{user.email}: #{e.message}"
-    #     handle_email_error(e)
-    #     end
-    # end
+        rescue => e
+            Rails.logger.error "Failed to send verification email to #{registration_details.email}: #{e.message}"
+            handle_email_error(e)
+        end
+    end
 
-    private
 
     def validate_configuration!
         missing_configs = []
@@ -88,10 +86,9 @@ class SmtpGmailService
     end
 
     def build_welcome_email(user)
-        # Pre-generate template content to avoid context issues
         html_content = welcome_email_html_template(user)
         text_content = welcome_email_text_template(user)
-        subject_line = "Welcome to #{app_name}!"
+        subject_line = "Welcome to #{app_name()}!"
         from_email = ENV["SMTP_GMAIL_APP_USERNAME"]
 
         mail = Mail.new do
@@ -135,27 +132,30 @@ class SmtpGmailService
     #     mail
     # end
 
-    # def build_verification_email(user, verification_token)
-    #     verification_url = "#{app_link}/verify-email?token=#{verification_token}"
+    def build_verification_email(registration_details)
+        html_content = verification_email_html_template(registration_details)
+        text_content = verification_email_text_template(registration_details)
+        subject_line = "Verify email for #{app_name()}!"
+        from_email = ENV["SMTP_GMAIL_APP_USERNAME"]
 
-    #     mail = Mail.new do
-    #     from     ENV['SMTP_GMAIL_APP_USERNAME']
-    #     to       user.email
-    #     subject  "Please Verify Your Email - #{app_name}"
+        mail = Mail.new do
+            from     from_email
+            to       registration_details.email
+            subject  subject_line
 
-    #     html_part do
-    #         content_type 'text/html; charset=UTF-8'
-    #         body verification_email_html_template(user, verification_url)
-    #     end
+            html_part do
+                content_type 'text/html; charset=UTF-8'
+                body html_content
+            end
 
-    #     text_part do
-    #         body verification_email_text_template(user, verification_url)
-    #     end
-    #     end
+            text_part do
+                body text_content
+            end
+        end
 
-    #     configure_mail_delivery(mail)
-    #     mail
-    # end
+        configure_mail_delivery(mail)
+        mail
+    end
 
     def configure_mail_delivery(mail)
         mail.delivery_method :smtp, @smtp_settings
@@ -346,61 +346,57 @@ class SmtpGmailService
     #     TEXT
     # end
 
-    # def verification_email_html_template(user, verification_url)
-    #     <<~HTML
-    #     <!DOCTYPE html>
-    #     <html>
-    #         <head>
-    #         <meta charset="UTF-8">
-    #         <title>Verify Your Email - #{app_name}</title>
-    #         <style>
-    #             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    #             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    #             .header { background-color: #2196F3; color: white; padding: 20px; text-align: center; }
-    #             .content { padding: 20px; background-color: #f9f9f9; }
-    #             .button { display: inline-block; padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; }
-    #             .footer { margin-top: 20px; padding: 10px; font-size: 12px; color: #666; text-align: center; }
-    #         </style>
-    #         </head>
-    #         <body>
-    #         <div class="container">
-    #             <div class="header">
-    #             <h1>Verify Your Email</h1>
-    #             </div>
-    #             <div class="content">
-    #             <h2>Hello #{user.first_name}!</h2>
-    #             <p>Thank you for signing up with #{app_name}. To complete your registration, please verify your email address.</p>
-    #             <p>Click the button below to verify your email:</p>
-    #             <p>
-    #                 <a href="#{verification_url}" class="button">Verify Email</a>
-    #             </p>
-    #             <p>If you didn't create an account with us, please ignore this email.</p>
-    #             </div>
-    #             <div class="footer">
-    #             <p>© #{Date.current.year} #{app_name}. All rights reserved.</p>
-    #             </div>
-    #         </div>
-    #         </body>
-    #     </html>
-    #     HTML
-    # end
+    def verification_email_html_template(registration_details)
+        <<~HTML
+        <!DOCTYPE html>
+        <html>
+            <head>
+            <meta charset="UTF-8">
+            <title>Verify Your Email - #{app_name}</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #2196F3; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .button { display: inline-block; padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; }
+                .footer { margin-top: 20px; padding: 10px; font-size: 12px; color: #666; text-align: center; }
+            </style>
+            </head>
+            <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Verify Your Email</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello #{registration_details.first_name}!</h2>
+                    <p>Thank you for signing up with #{app_name}. To complete your registration, please verify your email address.</p>
+                    <p>This is your OTP: #{registration_details.otp_code}</p>
+                    <p>If you didn't create an account with us, please ignore this email.</p>
+                </div>
+                <div class="footer">
+                    <p>© #{Date.current.year} #{app_name}. All rights reserved.</p>
+                </div>
+            </div>
+            </body>
+        </html>
+        HTML
+    end
 
-    # def verification_email_text_template(user, verification_url)
-    #     <<~TEXT
-    #     Verify Your Email - #{app_name}
+    def verification_email_text_template(registration_details)
+        <<~TEXT
+        Verify Your Email - #{app_name}
 
-    #     Hello #{user.first_name}!
+        Hello #{registration_details.first_name}!
 
-    #     Thank you for signing up with #{app_name}. To complete your registration, please verify your email address.
+        Thank you for signing up with #{app_name}. To complete your registration, please verify your email address.
 
-    #     Click the link below to verify your email:
-    #     #{verification_url}
+        This is your OTP: #{registration_details.otp_code}
 
-    #     If you didn't create an account with us, please ignore this email.
+        If you didn't create an account with us, please ignore this email.
 
-    #     © #{Date.current.year} #{app_name}. All rights reserved.
-    #     TEXT
-    # end
+        © #{Date.current.year} #{app_name}. All rights reserved.
+        TEXT
+    end
 
     # Helper methods
     def app_name
