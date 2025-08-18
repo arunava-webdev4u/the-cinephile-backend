@@ -7,9 +7,14 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins "*"
+    if Rails.env.production?
+      origins "https://the-cinephile-frontend.vercel.app"
+    else
+      origins "*"
+    end
+
     resource "*",
       headers: :any,
-      methods: [ :get, :post, :put, :patch, :delete ]
+      methods: [ :get, :post, :put, :patch, :delete, :options, :head ]
   end
 end
