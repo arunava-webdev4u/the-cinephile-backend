@@ -24,7 +24,10 @@ class Api::V1::AuthController < Api::V1::BaseController
             return render json: { message: "Verification OTP resent to your email" }, status: :ok
         end
 
-        # also check if user is already an active user
+        existing_user = User.find_by(email: auth_params[:email])
+        if existing_user
+            return render json: { message: "You already have an account with this account" }, status: :unprocessable_entity
+        end
 
         pending_registration = PendingRegistration.new(auth_params.except(:confirm_password))
         pending_registration.otp_code = generate_otp()
