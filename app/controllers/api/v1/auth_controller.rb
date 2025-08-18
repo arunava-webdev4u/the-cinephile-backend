@@ -43,7 +43,7 @@ class Api::V1::AuthController < Api::V1::BaseController
         pending_registration = PendingRegistration.find_by(email: params[:email])
 
         return render json: { error: "No pending registration" }, status: :not_found unless pending_registration
-        return render json: { error: "Invalid or expired OTP" }, status: :unprocessable_entity unless pending_registration.otp_code == params[:otp] && pending_registration.otp_expires_at > Time.now
+        return render json: { error: "Invalid or expired OTP" }, status: :unprocessable_entity unless pending_registration.otp_code == params[:otp].to_s && pending_registration.otp_expires_at > Time.now
 
         @user = User.new(
             email: pending_registration.email,
