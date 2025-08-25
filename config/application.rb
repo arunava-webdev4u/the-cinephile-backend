@@ -40,5 +40,9 @@ module TheCinephileBackend
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    if %w[development test].include?(Rails.env)
+      ENV.delete('DATABASE_URL')
+    end
   end
 end
