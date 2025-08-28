@@ -2,14 +2,8 @@ class Api::V1::AuthController < Api::V1::BaseController
     skip_before_action :authenticate_user!, only: [ :login, :register, :verify_email ]
 
     def login
-        # puts "========================"
-        # puts auth_params
         @user = User.find_by_email(auth_params[:email])
-        # puts "========================"
-        # puts @user.inspect
-        
-        # binding.pry
-        
+
         if @user && @user.authenticate(auth_params[:password])
             token = JsonWebToken.encode({ user_id: @user.id, jti: @user.jti })
             render json: { token: token, user: @user.as_json }, status: :ok

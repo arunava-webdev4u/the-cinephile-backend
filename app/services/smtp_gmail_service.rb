@@ -144,7 +144,7 @@ class SmtpGmailService
             subject  subject_line
 
             html_part do
-                content_type 'text/html; charset=UTF-8'
+                content_type "text/html; charset=UTF-8"
                 body html_content
             end
 

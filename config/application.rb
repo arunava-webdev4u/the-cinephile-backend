@@ -42,7 +42,7 @@ module TheCinephileBackend
     config.api_only = true
 
     if %w[development test].include?(Rails.env)
-      ENV.delete('DATABASE_URL')
+      ENV.delete("DATABASE_URL")
     end
   end
 end

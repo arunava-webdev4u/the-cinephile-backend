@@ -120,7 +120,7 @@ class User < ApplicationRecord
         end
     end
 
-    # def verified?
-    #     verification&.verified? || false
-    # end
+  # def verified?
+  #     verification&.verified? || false
+  # end
 end
