@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_16_181434) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_28_200009) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -39,6 +39,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_16_181434) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "user_verifications", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "otp_code", null: false
+    t.datetime "otp_expires_at", null: false
+    t.boolean "verified", default: false, null: false
+    t.datetime "verified_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_user_verifications_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", null: false
     t.string "password_digest", null: false
@@ -53,4 +64,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_16_181434) do
   end
 
   add_foreign_key "lists", "users"
+  add_foreign_key "user_verifications", "users"
 end
