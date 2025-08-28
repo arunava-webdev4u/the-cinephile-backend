@@ -15,27 +15,28 @@ class Api::V1::AuthController < Api::V1::BaseController
     def register
         return render json: { error: "passwords don't match" }, status: :unprocessable_entity if auth_params[:password] != auth_params[:confirm_password]
 
-        pending_registration = PendingRegistration.find_by(email: auth_params[:email])
+        user = User.find_by(email: auth_params[:email])
 
-        if pending_registration && !pending_registration.verified
-            pending_registration.update(otp_code: generate_otp(), otp_expires_at: 10.minutes.from_now)
-            SmtpGmailService.new.send_verification_email(pending_registration)
-            # SmtpGmailService.new.send_verification_email(pending_registration) if Rails.env.production?
-            return render json: { message: "Verification OTP resent to your email" }, status: :ok
+        if user&.verified?
+            return render json: { error: "Account already exists and is verified" }, status: :unprocessable_entity
         end
 
-        existing_user = User.find_by(email: auth_params[:email])
-        if existing_user
-            return render json: { message: "You already have an account with this account" }, status: :unprocessable_entity
+        if user.nil?    # user does not exist
+            user = User.new(auth_params.except(:confirm_password))
+            unless user.save
+                return render json: { errors: user.errors }, status: :unprocessable_entity
+            end
         end
 
-        pending_registration = PendingRegistration.new(auth_params.except(:confirm_password))
-        pending_registration.otp_code = generate_otp()
-        pending_registration.otp_expires_at = 10.minutes.from_now
+        verification = user.verification
+        if verification.present?
+            verification.regenerate!(ttl: 10.minutes)
+        else
+            verification = user.create_verification_record
+        end
 
-        if pending_registration.save
-            SmtpGmailService.new.send_verification_email(pending_registration)
-            # SmtpGmailService.new.send_verification_email(pending_registration) if Rails.env.production?
+        if verification.save!
+            SmtpGmailService.new.send_verification_email(user, verification) if Rails.env.production?
             render json: { message: "Please verify your email with the OTP sent" }, status: :ok
         else
             render json: { errors: pending.errors }, status: :unprocessable_entity
@@ -43,28 +44,20 @@ class Api::V1::AuthController < Api::V1::BaseController
     end
 
     def verify_email
-        pending_registration = PendingRegistration.find_by(email: params[:email])
+        user = User.find_by(email: params[:email])
+        return render json: { error: "No such account" }, status: :not_found unless user
 
-        return render json: { error: "No pending registration" }, status: :not_found unless pending_registration
-        return render json: { error: "Invalid or expired OTP" }, status: :unprocessable_entity unless pending_registration.otp_code == params[:otp].to_s && pending_registration.otp_expires_at > Time.now
+        verification = user.verification
+        return render json: { error: "No verification in progress" }, status: :unprocessable_entity unless verification
 
-        @user = User.new(
-            email: pending_registration.email,
-            password: pending_registration.password_digest,
-            first_name: pending_registration.first_name,
-            last_name: pending_registration.last_name,
-            date_of_birth: pending_registration.date_of_birth,
-            country: pending_registration.country
-        )
-
-        if @user.save
-            token = JsonWebToken.encode({ user_id: @user.id, jti: @user.jti })
-            pending_registration.update(verified: true)
-            SmtpGmailService.new.send_welcome_email(@user) if Rails.env.production?
-            render json: { token: token, user: @user.as_json }, status: :created
-        else
-            render json: { errors: @user.errors }, status: :unprocessable_entity
+        if verification.expired? || !verification.match?(params[:otp])
+            return render json: { error: "Invalid or expired OTP" }, status: :unprocessable_entity
         end
+
+        verification.mark_verified!
+        token = JsonWebToken.encode({ user_id: user.id, jti: user.jti })
+        SmtpGmailService.new.send_welcome_email(user) if Rails.env.production?
+        render json: { token: token, user: user.as_json }, status: :created
     end
 
     def logout

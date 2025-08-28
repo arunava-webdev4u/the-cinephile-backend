@@ -1,10 +1,12 @@
 class User < ApplicationRecord
     has_many :lists, dependent: :destroy
+    has_one :verification, class_name: "UserVerification", dependent: :destroy
 
     has_secure_password
     before_validation :strip_whitespace
     before_create :set_jti
     after_create :create_default_lists
+
 
     validates :first_name, :last_name, :email, :date_of_birth, :country,
         presence: true
@@ -69,6 +71,17 @@ class User < ApplicationRecord
     #     errors.add(:email, "domain is not supported")
     # end
 
+    def verified?
+        verification&.verified? || false
+    end
+
+    def create_verification_record
+        build_verification(
+            otp_code: UserVerification.generate_otp,
+            otp_expires_at: 10.minutes.from_now
+        ).tap(&:save!)
+    end
+
     private
 
     # Callbacks
@@ -106,4 +119,8 @@ class User < ApplicationRecord
             errors.add(:date_of_birth, "are you kidding me? You are too old!")
         end
     end
+
+  # def verified?
+  #     verification&.verified? || false
+  # end
 end
