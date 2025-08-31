@@ -39,7 +39,6 @@ RSpec.describe UserVerification, type: :model do
                 expect(verification.expired?).to be true
             end
         end
-        
     end
 
     describe "#match?" do

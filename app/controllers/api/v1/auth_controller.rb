@@ -45,10 +45,12 @@ class Api::V1::AuthController < Api::V1::BaseController
 
     def verify_email
         user = User.find_by(email: params[:email])
-        return render json: { error: "No such account" }, status: :not_found unless user
+        return render json: { error: "Account not found" }, status: :not_found unless user
 
         verification = user.verification
         return render json: { error: "No verification in progress" }, status: :unprocessable_entity unless verification
+
+        return render json: { error: "Already verified" }, status: :unprocessable_entity if verification.verified?
 
         if verification.expired? || !verification.match?(params[:otp])
             return render json: { error: "Invalid or expired OTP" }, status: :unprocessable_entity
