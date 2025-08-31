@@ -37,7 +37,7 @@ class Api::V1::AuthController < Api::V1::BaseController
 
         if verification.save!
             SmtpGmailService.new.send_verification_email(user, verification) if Rails.env.production?
-            render json: { message: "Please verify your email with the OTP sent" }, status: :ok
+            render json: { message: "Please verify your email with the OTP sent" }, status: :created
         else
             render json: { errors: pending.errors }, status: :unprocessable_entity
         end
