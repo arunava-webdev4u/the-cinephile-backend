@@ -13,6 +13,9 @@ class Api::V1::AuthController < Api::V1::BaseController
     end
 
     def register
+        # binding.pry
+        # puts "2: #{auth_params}"
+
         return render json: { error: "passwords don't match" }, status: :unprocessable_entity if auth_params[:password] != auth_params[:confirm_password]
 
         user = User.find_by(email: auth_params[:email])
@@ -23,9 +26,9 @@ class Api::V1::AuthController < Api::V1::BaseController
 
         if user.nil?    # user does not exist
             user = User.new(auth_params.except(:confirm_password))
-            unless user.save
-                return render json: { errors: user.errors }, status: :unprocessable_entity
-            end
+
+            return render json: { errors: user.errors }, status: :unprocessable_entity unless user.valid?
+            return render json: { errors: user.errors }, status: :unprocessable_entity unless user.save
         end
 
         verification = user.verification

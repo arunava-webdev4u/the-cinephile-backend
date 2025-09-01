@@ -9,11 +9,13 @@ RSpec.describe "Api::V1::AuthController", type: :request do
         context "with valid credentials" do
             it "returns status ok" do
                 post "/api/v1/auth/login", params: { user: { email: user.email, password: "secret123" } }.to_json, headers: headers
+
                 expect(response).to have_http_status(:ok)
             end
 
             it "returns a JWT token and user" do
                 post "/api/v1/auth/login", params: { user: { email: user.email, password: "secret123" } }.to_json, headers: headers
+
                 expect(JSON.parse(response.body)).to include("token", "user")
             end
         end
@@ -22,11 +24,13 @@ RSpec.describe "Api::V1::AuthController", type: :request do
             context "when email is incorrect" do
                 it "returns unauthorized status" do
                     post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "secret123" } }.to_json, headers: headers
+
                     expect(response).to have_http_status(:unauthorized)
                 end
 
                 it "returns proper error message" do
                     post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "secret123" } }.to_json, headers: headers
+
                     expect(JSON.parse(response.body)["error"]).to eq("email or password is incorrect")
                 end
             end
@@ -34,11 +38,13 @@ RSpec.describe "Api::V1::AuthController", type: :request do
             context "when password is incorrect" do
                 it "returns unauthorized status" do
                     post "/api/v1/auth/login", params: { user: { email: user.email, password: "abcd1234" } }.to_json, headers: headers
+
                     expect(response).to have_http_status(:unauthorized)
                 end
 
                 it "returns proper error message" do
                     post "/api/v1/auth/login", params: { user: { email: user.email, password: "abcd1234" } }.to_json, headers: headers
+
                     expect(JSON.parse(response.body)["error"]).to eq("email or password is incorrect")
                 end
             end
@@ -46,11 +52,13 @@ RSpec.describe "Api::V1::AuthController", type: :request do
             context "when email & password both are incorrect" do
                 it "returns unauthorized status" do
                     post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "abcd1234" } }.to_json, headers: headers
+
                     expect(response).to have_http_status(:unauthorized)
                 end
 
                 it "returns proper error message" do
                     post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "abcd1234" } }.to_json, headers: headers
+
                     expect(JSON.parse(response.body)["error"]).to eq("email or password is incorrect")
                 end
             end
@@ -73,51 +81,148 @@ RSpec.describe "Api::V1::AuthController", type: :request do
         context "with valid parameters" do
             it "creates a new user and returns created status" do
                 post "/api/v1/auth/register", params: register_params.to_json, headers: headers
+
                 expect(response).to have_http_status(:created)
             end
 
             it "creates a new user and returns token and user details" do
                 post "/api/v1/auth/register", params: register_params.to_json, headers: headers
+
                 expect(JSON.parse(response.body)).to include("message")
                 expect(JSON.parse(response.body)["message"]).to eq("Please verify your email with the OTP sent")
             end
 
-            it "fails if passwords do not match" do
-                register_params.dig(:user, :confirm_password).replace("2222")
+            it "should not return password or password_digest" do
                 post "/api/v1/auth/register", params: register_params.to_json, headers: headers
+
+                expect(JSON.parse(response.body)).not_to include("password", "password_digest")
+            end
+
+            it "creates a verification record for the user" do
+                post "/api/v1/auth/register", params: register_params.to_json, headers: headers
+                verification = User.find_by(email: register_params[:user][:email]).verification
+                expect(verification).not_to be_nil
+                expect(verification.verified).to be_falsey
+            end
+
+            it "fails if passwords do not match" do
+                params = register_params.deep_dup
+                params[:user][:confirm_password] = "2222"
+                post "/api/v1/auth/register", params: params.to_json, headers: headers
+
                 expect(response).to have_http_status(:unprocessable_entity)
                 expect(JSON.parse(response.body)["error"]).to eq("passwords don't match")
             end
 
-          # it "fails if user already exists and is verified" do
-          # end
+            context "when user already exists" do
+                let(:user) { create(:user) }
 
-          # it "creates a verification record for the user" do
-          # end
+                context "and is verified" do
+                    it "will not create a new record in user_verifications" do
+                        create(:user_verification, user: user, verified: true)
 
-          # it "sends a verification email to the user" do
-          # end
+                        params = register_params.deep_dup
+                        params[:user][:email] = user.email
+
+                        post "/api/v1/auth/register", params: params.to_json, headers: headers
+
+                        expect(response).to have_http_status(:unprocessable_entity)
+                        expect(JSON.parse(response.body)["error"]).to eq("Account already exists and is verified")
+                    end
+
+                  # it "should send email" do
+                  # end
+                end
+
+                context "and is not verified" do
+                    it "will update the record in user_verifications" do
+                        create(:user_verification, user: user, verified: false)
+
+                        params = register_params.deep_dup
+                        params[:user][:email] = user.email
+
+                        post "/api/v1/auth/register", params: params.to_json, headers: headers
+
+                        expect(response).to have_http_status(:created)
+                        expect(JSON.parse(response.body)["message"]).to eq("Please verify your email with the OTP sent")
+                    end
+
+                    it "should regenerate the OTP and otp_expires_at" do
+                        verification = create(:user_verification, user: user, verified: false)
+                        old_otp = verification.otp_code
+                        old_expiry = verification.otp_expires_at
+
+                        params = register_params.deep_dup
+                        params[:user][:email] = user.email
+
+                        post "/api/v1/auth/register", params: params.to_json, headers: headers
+
+                        verification.reload
+                        expect(verification.otp_code).not_to eq(old_otp)
+                        expect(verification.otp_expires_at).to be > old_expiry
+                    end
+
+                  # it "should send email" do
+                  # end
+                end
+            end
         end
 
         context "with invalid parameters" do
+            register_params = {
+                user: {
+                    email: "benten@gmail.com",
+                    password: "1111",
+                    confirm_password: "1111",
+                    first_name: "ben",
+                    last_name: "ten",
+                    country: 7,
+                    date_of_birth: "2000-12-20"
+                }
+            }
+
             context "when required fields are missing" do
-              # it "fails when email is missing" do
-              # end
+                it "fails when email is missing" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].except(:email) }.to_json, headers: headers
 
-              # it "fails when password is missing" do
-              # end
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["email"]).to include("can't be blank")
+                end
 
-              # it "fails when first_name is missing" do
-              # end
+                it "fails when password is missing" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].except(:password) }.to_json, headers: headers
 
-              # it "fails when last_name is missing" do
-              # end
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["error"]).to include("passwords don't match")
+                end
 
-              # it "fails when country is missing" do
-              # end
+                it "fails when first_name is missing" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].except(:first_name) }.to_json, headers: headers
 
-              # it "fails when date_of_birth is missing" do
-              # end
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["first_name"]).to include("can't be blank")
+                end
+
+                it "fails when last_name is missing" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].except(:last_name) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["last_name"]).to include("can't be blank")
+                end
+
+                it "fails when country is missing" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].except(:country) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["country"]).to include("can't be blank")
+                end
+
+                it "fails when date_of_birth is missing" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].except(:date_of_birth) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["date_of_birth"]).to include("can't be blank")
+                end
             end
 
             context "for email" do
@@ -211,12 +316,14 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                 it "rejects invalid email" do
                     post "/api/v1/auth/verify_email", params: { email: "ax4!%5&g.@gmail.com", otp: verification.otp_code }.to_json, headers: headers
+
                     expect(response).to have_http_status(:not_found)
                     expect(JSON.parse(response.body)["error"]).to include("Account not found")
                 end
 
                 it "rejects invalid otp" do
                     post "/api/v1/auth/verify_email", params: { email: user.email, otp: "#2f6f3" }.to_json, headers: headers
+
                     expect(response).to have_http_status(:unprocessable_entity)
                     expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
                 end
@@ -230,6 +337,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
         it "logs out the user with proper response" do
             delete "/api/v1/auth/logout", headers: headers.merge({ "Authorization" => "Bearer #{token}" })
+
             expect(response).to have_http_status(:ok)
             expect(JSON.parse(response.body)["message"]).to eq("logged out")
         end
@@ -237,12 +345,14 @@ RSpec.describe "Api::V1::AuthController", type: :request do
         it "invalidates the user's jti" do
             old_jti = user.jti
             delete "/api/v1/auth/logout", headers: headers.merge({ "Authorization" => "Bearer #{token}" })
+
             user.reload
             expect(user.jti).not_to eq(old_jti)
         end
 
         it "rejects logout if no token is provided" do
             delete "/api/v1/auth/logout", headers: headers
+
             expect(response).to have_http_status(:unauthorized)
         end
     end
