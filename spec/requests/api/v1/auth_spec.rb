@@ -226,14 +226,32 @@ RSpec.describe "Api::V1::AuthController", type: :request do
             end
 
             context "for email" do
-              # it "fails when email is invalid" do
-              # end
+                it "fails when email is in invalid" do
+                    invalid_emails = [
+                        'abc!%4&g.@gmail.com',
+                        'abc.gmail.com',
+                        'abc@',
+                        'abc@gmail',
+                        '@gmail.com',
+                        'abc@@gmail.com',
+                        'abc gmail@gmail.com',
+                        'invalid-email'
+                    ]
+                    invalid_emails.each do |invalid_email|
+                        post "/api/v1/auth/register", params: { user: register_params[:user].merge(email: invalid_email) }.to_json, headers: headers
 
-              # it "fails when email is already taken by a verified user" do
-              # end
+                        expect(response).to have_http_status(:unprocessable_entity)
+                        expect(JSON.parse(response.body)["errors"]["email"]).to include("is invalid")
+                    end
+                end
 
-              # it "creates a new user if email is taken by an unverified user" do
-              # end
+                it "fails when email is too long" do
+                    email = "#{'a'*80} #{'5'*80} #{'k'*80} #{'x'*80}@example.com"
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(email: email) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["email"]).to include("is invalid")
+                end
             end
 
             context "for password" do
@@ -246,19 +264,47 @@ RSpec.describe "Api::V1::AuthController", type: :request do
             end
 
             context "for country" do
-              # it "fails when country is invalid" do
-              # end
+                it "fails when country is not a string" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(country: "india") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["country"]).to include("is not a number")
+                end
+
+                it "fails when country is not a whole number" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(country: 3.14) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["country"]).to include("must be an integer")
+                end
+                it "fails when country is not a negetive number" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(country: -91) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["country"]).to include("must be greater than 0")
+                end
             end
 
             context "for date_of_birth" do
-              # it "fails when date_of_birth is invalid" do
-              # end
+                it "fails when invalid" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(date_of_birth: "abcd-xy-99") }.to_json, headers: headers
 
-              # it "fails when user is underage" do
-              # end
+                    expect(response).to have_http_status(:unprocessable_entity)
+                end
 
-              # it "fails when user is a ghost" do
-              # end
+                it "fails when date is in future" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(date_of_birth: Date.current + 1.day) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["date_of_birth"]).to include("can not be today or a future date")
+                end
+
+                it "fails when user is a ghost" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(date_of_birth: Date.current-120.years) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["date_of_birth"]).to include("are you kidding me? You are too old!")
+                end
             end
         end
     end

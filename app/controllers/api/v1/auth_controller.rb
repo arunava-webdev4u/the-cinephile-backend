@@ -13,9 +13,6 @@ class Api::V1::AuthController < Api::V1::BaseController
     end
 
     def register
-        # binding.pry
-        # puts "2: #{auth_params}"
-
         return render json: { error: "passwords don't match" }, status: :unprocessable_entity if auth_params[:password] != auth_params[:confirm_password]
 
         user = User.find_by(email: auth_params[:email])
