@@ -76,10 +76,23 @@ RSpec.describe User, type: :model do
         expect(user.errors[:email]).to include('is too long (maximum is 254 characters)')
       end
 
-      it 'is not valid with an invalid email format' do
-        user.email = 'invalid-email'
-        expect(user).not_to be_valid
-        expect(user.errors[:email]).to include('is invalid')
+      it 'is not valid with an invalid email' do
+        invalid_emails = [
+          'abc!%4&g.@gmail.com',
+          'abc.gmail.com',
+          'abc@',
+          'abc@gmail',
+          '@gmail.com',
+          'abc@@gmail.com',
+          'abc gmail@gmail.com',
+          'invalid-email'
+        ]
+
+          invalid_emails.each do |invalid_email|
+            user.email = invalid_email
+            expect(user).not_to be_valid, "#{invalid_email.inspect} should be invalid"
+            expect(user.errors[:email]).to include('is invalid')
+          end
       end
 
       context 'when duplicate email' do
@@ -110,6 +123,10 @@ RSpec.describe User, type: :model do
     end
 
     # ###############################33
+    # context "password validations" do
+    # will implement in future
+    # end
+
     context 'date_of_birth validations' do
       it 'is not valid without a date_of_birth' do
         user.date_of_birth = nil

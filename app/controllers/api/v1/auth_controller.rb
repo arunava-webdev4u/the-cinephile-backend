@@ -23,9 +23,9 @@ class Api::V1::AuthController < Api::V1::BaseController
 
         if user.nil?    # user does not exist
             user = User.new(auth_params.except(:confirm_password))
-            unless user.save
-                return render json: { errors: user.errors }, status: :unprocessable_entity
-            end
+
+            return render json: { errors: user.errors }, status: :unprocessable_entity unless user.valid?
+            return render json: { errors: user.errors }, status: :unprocessable_entity unless user.save
         end
 
         verification = user.verification
@@ -37,7 +37,7 @@ class Api::V1::AuthController < Api::V1::BaseController
 
         if verification.save!
             SmtpGmailService.new.send_verification_email(user, verification) if Rails.env.production?
-            render json: { message: "Please verify your email with the OTP sent" }, status: :ok
+            render json: { message: "Please verify your email with the OTP sent" }, status: :created
         else
             render json: { errors: pending.errors }, status: :unprocessable_entity
         end
@@ -45,10 +45,12 @@ class Api::V1::AuthController < Api::V1::BaseController
 
     def verify_email
         user = User.find_by(email: params[:email])
-        return render json: { error: "No such account" }, status: :not_found unless user
+        return render json: { error: "Account not found" }, status: :not_found unless user
 
         verification = user.verification
         return render json: { error: "No verification in progress" }, status: :unprocessable_entity unless verification
+
+        return render json: { error: "Already verified" }, status: :unprocessable_entity if verification.verified?
 
         if verification.expired? || !verification.match?(params[:otp])
             return render json: { error: "Invalid or expired OTP" }, status: :unprocessable_entity

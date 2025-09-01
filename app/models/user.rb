@@ -15,10 +15,12 @@ class User < ApplicationRecord
         length: { maximum: 50, minimum: 1 },
         format: { with: /\A[a-zA-Z]+\z/, message: "must contain only alphabets" }
 
+    VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
     validates :email,
         length: { maximum: 254 },
         uniqueness: { case_sensitive: false },
-        format: { with: URI::MailTo::EMAIL_REGEXP }
+        format: { with: VALID_EMAIL_REGEX }
+    # format: { with: URI::MailTo::EMAIL_REGEXP }
 
     validates :country,
         numericality: { only_integer: true, greater_than: 0 }
