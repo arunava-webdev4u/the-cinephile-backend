@@ -7,6 +7,21 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 # Uncomment the line below in case you have `--require rails_helper` in the `.rspec` file
 # that will avoid rails generators crashing because migrations haven't been run yet
 # return unless Rails.env.test?
+require 'simplecov'
+SimpleCov.start 'rails' do
+  # Ignore
+  add_filter '/bin/'
+  add_filter '/config/'
+  add_filter '/db/'
+  add_filter '/docs/'
+  add_filter '/log/'
+  add_filter '/public/'
+  add_filter '/script/'
+  add_filter '/spec/'
+  add_filter '/tmp/'
+  add_filter '/vendor/'
+end
+
 require 'rspec/rails'
 # Add additional requires below this line. Rails is not loaded until this point!
 

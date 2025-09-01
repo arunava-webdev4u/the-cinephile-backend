@@ -49,5 +49,6 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "faker" # (Optional: for generating test data)
   gem "shoulda-matchers", "~> 6.0"
+  gem "simplecov", require: false
   # gem "parallel_tests"
 end
