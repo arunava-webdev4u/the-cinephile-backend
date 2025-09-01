@@ -254,13 +254,56 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 end
             end
 
-            context "for password" do
-            end
+            # context "for password" do
+            # password validations will be included later
+            # end
 
             context "for first_name" do
+                it "fails when not a string" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(first_name: "John123") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["first_name"]).to include("must contain only alphabets")
+                end
+
+                it "fails when too long" do
+                    first_name = "asdkkfjhasdfjhaslkfhaslfhaslfhaslfjashflkashflasfhasljgsfjasgljasgflsfgasdlkfgasfjasgfjasgflasjfgaslfgaslfgsdljfg"
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(first_name: first_name) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["first_name"]).to include("is too long (maximum is 50 characters)")
+                end
+
+                it "fails when empty string" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(first_name: "") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["first_name"]).to include("is too short (minimum is 1 character)")
+                end
             end
 
             context "for last_name" do
+                it "fails when not a string" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(last_name: "John123") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["last_name"]).to include("must contain only alphabets")
+                end
+
+                it "fails when too long" do
+                    last_name = "asdkkfjhasdfjhaslkfhaslfhaslfhaslfjashflkashflasfhasljgsfjasgljasgflsfgasdlkfgasfjasgfjasgflasjfgaslfgaslfgsdljfg"
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(last_name: last_name) }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["last_name"]).to include("is too long (maximum is 50 characters)")
+                end
+
+                it "fails when empty string" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(last_name: "") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["last_name"]).to include("is too short (minimum is 1 character)")
+                end
             end
 
             context "for country" do

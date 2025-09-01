@@ -123,6 +123,10 @@ RSpec.describe User, type: :model do
     end
 
     # ###############################33
+    # context "password validations" do
+    # will implement in future
+    # end
+
     context 'date_of_birth validations' do
       it 'is not valid without a date_of_birth' do
         user.date_of_birth = nil
