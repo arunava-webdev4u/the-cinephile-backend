@@ -400,7 +400,7 @@ class SmtpGmailService
 
     # Helper methods
     def app_name
-        ENV["APP_NAME"] || "The Cinehile"
+        ENV["APP_NAME"] || "The Cinephile"
     end
 
     def app_link
