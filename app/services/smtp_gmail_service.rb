@@ -64,11 +64,11 @@ class SmtpGmailService
             mail = build_verification_email(registration_details)
             deliver_email(mail)
 
-            Rails.logger.info "Verification email sent successfully to #{registration_details.email}"
+            Rails.logger.info "Verification email sent successfully to #{registration_details[:email]}"
             { success: true, message: "Verification email sent successfully" }
 
         rescue => e
-            Rails.logger.error "Failed to send verification email to #{registration_details.email}: #{e.message}"
+            Rails.logger.error "Failed to send verification email to #{registration_details[:email]}: #{e.message}"
             handle_email_error(e)
         end
     end
@@ -140,7 +140,7 @@ class SmtpGmailService
 
         mail = Mail.new do
             from     from_email
-            to       registration_details.email
+            to       registration_details[:email]
             subject  subject_line
 
             html_part do
@@ -368,9 +368,9 @@ class SmtpGmailService
                     <h1>Verify Your Email</h1>
                 </div>
                 <div class="content">
-                    <h2>Hello #{registration_details.first_name}!</h2>
+                    <h2>Hello #{registration_details[:first_name]}!</h2>
                     <p>Thank you for signing up with #{app_name}. To complete your registration, please verify your email address.</p>
-                    <p>This is your OTP: #{registration_details.otp_code}</p>
+                    <p>This is your OTP: #{registration_details[:otp_code]}</p>
                     <p>If you didn't create an account with us, please ignore this email.</p>
                 </div>
                 <div class="footer">
@@ -386,11 +386,11 @@ class SmtpGmailService
         <<~TEXT
         Verify Your Email - #{app_name}
 
-        Hello #{registration_details.first_name}!
+        Hello #{registration_details[:first_name]}!
 
         Thank you for signing up with #{app_name}. To complete your registration, please verify your email address.
 
-        This is your OTP: #{registration_details.otp_code}
+        This is your OTP: #{registration_details[:otp_code]}
 
         If you didn't create an account with us, please ignore this email.
 
