@@ -59,19 +59,65 @@ RSpec.describe TmdbService, type: :service do
         end
     end
 
-  # context "3rd party API calls" do
-  # search_by_name
-  # search_by_id
-  # discover
-  # genre
-  # lists
-  # trending
-  # credits
-  # images
-  # images
-  # external_ids
-  # recommendations
-  # watch_providers
-  # videos
-  # end
+    context "3rd party API calls" do
+        let(:service) { described_class.new }
+
+        describe "#search_by_name" do
+            let(:query) { "Avatar" }
+            let(:type) { "movie" }
+            let(:expected_response) {  { 'results' => [ { 'id' => 603, 'title' => 'The Matrix' } ] } }
+
+            before do
+                allow(service).to receive(:tmdb_request).and_return(expected_response)
+            end
+
+            it 'calls tmdb_request with correct parameters' do
+                service.search_by_name(query, type)
+                expect(service).to have_received(:tmdb_request).with("search/#{type}?query=#{query}")
+            end
+
+            it 'returns the API response' do
+                response = service.search_by_name(query, type)
+                expect(response).to eq(expected_response)
+            end
+
+            context 'with special characters in query' do
+            end
+        end
+
+        describe "#search_by_id" do
+            let(:id) { "Office" }
+            let(:type) { "tv" }
+            let(:expected_response) {  { 'results' => [ { 'id' => 1169, 'title' => 'The Office' } ] } }
+
+            before do
+                allow(service).to receive(:tmdb_request).and_return(expected_response)
+            end
+
+            it 'calls tmdb_request with correct parameters' do
+                service.search_by_id(id, type)
+                expect(service).to have_received(:tmdb_request).with("#{type}/#{id}")
+            end
+
+            it 'returns the API response' do
+                response = service.search_by_id(id, type)
+                expect(response).to eq(expected_response)
+            end
+
+            context 'with special characters in query' do
+            end
+        end
+
+      # discover
+      # genre
+      # lists
+      # trending
+      # credits
+      # images
+      # images
+      # external_ids
+      # recommendations
+      # watch_providers
+      # videos
+    end
 end

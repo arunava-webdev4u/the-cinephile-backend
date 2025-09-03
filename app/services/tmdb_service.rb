@@ -31,12 +31,12 @@ class TmdbService
 
   # Discover movie/tv
   def discover(type)
-    tmdb_request("discover/#{type}")
+    # tmdb_request("discover/#{type}")
   end
 
   # Genre movie/tv
   def genre(type)
-    tmdb_request("genre/#{type}/list")
+    # tmdb_request("genre/#{type}/list")
   end
 
   # Lists movies/tv/persons
