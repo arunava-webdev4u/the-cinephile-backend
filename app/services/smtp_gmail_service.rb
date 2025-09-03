@@ -25,7 +25,7 @@ class SmtpGmailService
     def send_welcome_email(user)
         raise EmailError, "User cannot be nil" if user.nil?
         raise EmailError, "User email is required" if user.email.blank?
-        raise EmailError, "User name is required" if user.first_name.blank?
+        raise EmailError, "User first name is required" if user.first_name.blank?
 
         begin
             mail = build_welcome_email(user)
@@ -58,7 +58,9 @@ class SmtpGmailService
     # end
 
     def send_verification_email(registration_details)
-        raise EmailError, "Details cannot be nil" if registration_details.nil?
+        raise EmailError, "Registration details cannot be nil" if registration_details.nil?
+        raise EmailError, "Registration email is required" if registration_details[:email].nil?
+        raise EmailError, "Registration otp_code is required" if registration_details[:otp_code].nil?
 
         begin
             mail = build_verification_email(registration_details)
