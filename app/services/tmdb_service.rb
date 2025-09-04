@@ -15,15 +15,15 @@ class TmdbService
 
   # Search movie/tv
   def search_by_name(query, type)
-      tmdb_request("search/#{type}?query=#{query}")
+    tmdb_request("search/#{type}?query=#{query}")
   end
   def search_by_id(id, type)
-      tmdb_request("#{type}/#{id}")
+    tmdb_request("#{type}/#{id}")
   end
 
   # Trendings movie/tv
   def trending
-      "trending"
+    "trending"
   end
 
   # Collection ()
@@ -31,12 +31,12 @@ class TmdbService
 
   # Discover movie/tv
   def discover(type)
-      tmdb_request("discover/#{type}")
+    # tmdb_request("discover/#{type}")
   end
 
   # Genre movie/tv
   def genre(type)
-      tmdb_request("genre/#{type}/list")
+    # tmdb_request("genre/#{type}/list")
   end
 
   # Lists movies/tv/persons
@@ -101,15 +101,15 @@ class TmdbService
   private
 
   def tmdb_request(resource_path)
-      url = URI("#{BASE_URL_V3}/#{resource_path}")
-      http = Net::HTTP.new(url.host, url.port)
-      http.use_ssl = true
+    url = URI("#{BASE_URL_V3}/#{resource_path}")
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = true
 
-      request = Net::HTTP::Get.new(url)
-      request["accept"] = "application/json"
-      request["Authorization"] = "Bearer " + @api_token
+    request = Net::HTTP::Get.new(url)
+    request["accept"] = "application/json"
+    request["Authorization"] = "Bearer " + @api_token
 
-      response = http.request(request)
-      JSON.parse(response.body)
+    response = http.request(request)
+    JSON.parse(response.body)
   end
 end
