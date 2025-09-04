@@ -81,7 +81,31 @@ RSpec.describe TmdbService, type: :service do
                 expect(response).to eq(expected_response)
             end
 
+            context 'with different search types' do
+                %w[movie tv person].each do |search_type|
+                    it "works with #{search_type} type" do
+                        service.search_by_name(query, search_type)
+                        expect(service).to have_received(:tmdb_request).with("search/#{search_type}?query=#{query}")
+                    end
+                end
+            end
+
             context 'with special characters in query' do
+                let(:query_with_spaces) { 'The Dark Knight' }
+                let(:query_with_symbols) { 'Spider-Man: No Way Home' }
+
+                it "handles queries with spaces" do
+                    service.search_by_name(query_with_spaces, type)
+                    expect(service).to have_received(:tmdb_request).with("search/#{type}?query=#{query_with_spaces}")
+                end
+
+                it "handles queries with special characters" do
+                    service.search_by_name(query_with_symbols, type)
+                    expect(service).to have_received(:tmdb_request).with("search/#{type}?query=#{query_with_symbols}")
+                end
+
+              # it "rejects queries with invalid characters" do
+              # end
             end
         end
 
@@ -104,7 +128,28 @@ RSpec.describe TmdbService, type: :service do
                 expect(response).to eq(expected_response)
             end
 
-            context 'with special characters in query' do
+            context 'with different search types' do
+                %w[movie tv person].each do |search_type|
+                    it "works with #{search_type} type" do
+                        service.search_by_id(id, search_type)
+                        expect(service).to have_received(:tmdb_request).with("#{search_type}/#{id}")
+                    end
+                end
+            end
+
+            context 'with types of id' do
+                let(:numeric_id) { 550 }
+
+                it "works with numeric id" do
+                    service.search_by_id(numeric_id, type)
+                    expect(service).to have_received(:tmdb_request).with("#{type}/#{numeric_id}")
+                end
+
+                it "works with string id" do
+                    string_id = numeric_id.to_s
+                    service.search_by_id(string_id, type)
+                    expect(service).to have_received(:tmdb_request).with("#{type}/#{string_id}")
+                end
             end
         end
 
