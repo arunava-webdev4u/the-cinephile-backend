@@ -5,7 +5,7 @@ class Api::V1::AuthController < Api::V1::BaseController
         @user = User.find_by_email(auth_params[:email])
 
         if @user && @user.authenticate(auth_params[:password])
-            token = JsonWebToken.encode({ user_id: @user.id, jti: @user.jti })
+            token = Auth::JsonWebToken.encode({ user_id: @user.id, jti: @user.jti })
             render json: { token: token, user: @user.as_json }, status: :ok
         else
             render json: { error: "email or password is incorrect" }, status: :unauthorized
@@ -59,7 +59,7 @@ class Api::V1::AuthController < Api::V1::BaseController
         end
 
         verification.mark_verified!
-        token = JsonWebToken.encode({ user_id: user.id, jti: user.jti })
+        token = Auth::JsonWebToken.encode({ user_id: user.id, jti: user.jti })
         SmtpGmailService.new.send_welcome_email(user) if Rails.env.production?
         render json: { token: token, user: user.as_json }, status: :created
     end
