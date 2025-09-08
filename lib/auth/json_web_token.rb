@@ -1,6 +1,5 @@
 class Auth::JsonWebToken
-    # SECRET_KEY = Rails.application.credentials.secret_key_base || "my-super-secret-key"
-    SECRET_KEY = "my-super-secret-key"
+    SECRET_KEY = Rails.application.credentials.dig(:secret_key_base) || Rails.application.secret_key_base
     EXPIRE_TIME = 1.day.from_now.to_i
 
     def self.encode(payload)
