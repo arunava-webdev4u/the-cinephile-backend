@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe Authenticable, type: :controller  do
     controller(Api::V1::ApplicationController) do
         include Authenticable
-        
+
         def index
             render json: { message: "success" }
         end
@@ -37,7 +37,7 @@ RSpec.describe Authenticable, type: :controller  do
                 expect(JSON.parse(response.body)["error"]).to eq("Authorization token is missing")
             end
         end
-        
+
         context "when token is invalid or expired" do
             before do
                 allow(Auth::JsonWebToken).to receive(:decode).and_return(nil)
@@ -79,7 +79,7 @@ RSpec.describe Authenticable, type: :controller  do
                 expect(JSON.parse(response.body)["error"]).to eq("Invalid or expired token")
             end
         end
-        
+
         context "when token is valid" do
             before do
                 allow(Auth::JsonWebToken).to receive(:decode).and_return({ user_id: user.id, jti: user.jti })
@@ -88,7 +88,7 @@ RSpec.describe Authenticable, type: :controller  do
             it "sets @current_user and allows access" do
                 request.headers["Authorization"] = "Bearer #{token}"
                 get :index
-                
+
                 expect(response).to have_http_status(:ok)
                 expect(JSON.parse(response.body)).to eq({ "message" => "success" })
                 expect(controller.instance_variable_get(:@current_user)).to eq(user)
