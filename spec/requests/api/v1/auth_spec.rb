@@ -422,7 +422,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
     describe "DELETE /api/v1/auth/logout" do
         let(:user) { create(:user) }
-        let(:token) { JsonWebToken.encode({ user_id: user.id, jti: user.jti }) }
+        let(:token) { Auth::JsonWebToken.encode({ user_id: user.id, jti: user.jti }) }
 
         it "logs out the user with proper response" do
             delete "/api/v1/auth/logout", headers: headers.merge({ "Authorization" => "Bearer #{token}" })
