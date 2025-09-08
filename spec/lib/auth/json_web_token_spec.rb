@@ -7,7 +7,7 @@ RSpec.describe Auth::JsonWebToken do
 
     describe 'constants' do
         it 'has the correct SECRET_KEY' do
-            expect(described_class::SECRET_KEY).to eq(Rails.application.credentials.secret_key_base)
+            expect(described_class::SECRET_KEY).to eq(Rails.application.secret_key_base)
         end
     end
 
