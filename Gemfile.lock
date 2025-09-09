@@ -170,7 +170,7 @@ GEM
     psych (5.2.3)
       date
       stringio
-    puma (6.6.0)
+    puma (7.0.2)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.1.13)
@@ -309,7 +309,7 @@ DEPENDENCIES
   mail (~> 2.8)
   pg (~> 1.1)
   pry-rails
-  puma (~> 6.6)
+  puma (~> 7.0)
   rack-cors
   rails (~> 8.0.2)
   rspec-rails
