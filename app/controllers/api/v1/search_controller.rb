@@ -77,9 +77,6 @@ class Api::V1::SearchController < Api::V1::BaseController
   def search_params
     params.permit(:query, :tmdb_id, :type)
   end
-  # def tmdb_service
-  #   @tmdb_service
-  # end
 
   def validate_search_params
     unless params[:type].present?
