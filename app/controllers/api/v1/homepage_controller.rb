@@ -1,4 +1,6 @@
 class Api::V1::HomepageController < Api::V1::ApplicationController
+  skip_before_action :authenticate_user!, only: [ :index ]
+
   def index
     @version = ActiveRecord::Base.connection.execute("SELECT version();").first["version"]
     render json: { message: "Welcome to The Cinephile API. PG version: #{@version}" }
