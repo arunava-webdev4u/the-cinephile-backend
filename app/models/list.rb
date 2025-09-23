@@ -1,5 +1,7 @@
 class List < ApplicationRecord
     belongs_to :user
+    has_many :list_items, dependent: :destroy
+
     before_validation :set_default_private
 
     validates :name, :type, :user_id,
@@ -12,8 +14,6 @@ class List < ApplicationRecord
     validates :description,
         length: { maximum: 250 },
         format: { with: /\A[a-zA-Z0-9\s\-\_\.\,\:\;\?\!\(\)\[\]\{\}\'\"]*\z/, message: "contains invalid characters" }
-
-
 
     validate :list_type_must_be_valid
     # Additional security validations

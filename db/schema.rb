@@ -10,9 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_28_210938) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_23_115656) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "list_items", force: :cascade do |t|
+    t.bigint "list_id", null: false
+    t.bigint "item_id", null: false
+    t.string "item_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["list_id"], name: "index_list_items_on_list_id"
+  end
 
   create_table "lists", force: :cascade do |t|
     t.bigint "user_id", null: false
@@ -49,6 +58,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_210938) do
     t.index ["jti"], name: "index_users_on_jti", unique: true
   end
 
+  add_foreign_key "list_items", "lists"
   add_foreign_key "lists", "users"
   add_foreign_key "user_verifications", "users"
 end
