@@ -3,7 +3,7 @@ source "https://rubygems.org"
 gem "rails", "~> 8.0.2"
 gem "pg", "~> 1.1"
 gem "puma", "~> 6.6"
-gem "faraday", "~> 2.7"
+gem "faraday", "~> 2.14"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # gem "jbuilder"
 
