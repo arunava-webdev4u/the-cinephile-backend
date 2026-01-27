@@ -28,8 +28,13 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :default_list, controller: :lists, type: "DefaultList", only: [ :index, :show ]
-      resources :custom_list, controller: :lists, type: "CustomList"
+      resources :default_list, controller: :lists, type: "DefaultList", only: [ :index, :show ] do
+        resources :list_items, only: [ :index, :create, :destroy ]
+      end
+
+      resources :custom_list, controller: :lists, type: "CustomList" do
+        resources :list_items, only: [ :index, :create, :destroy ]
+      end
     end
   end
 end
