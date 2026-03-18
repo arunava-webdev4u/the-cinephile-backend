@@ -17,6 +17,11 @@ class TmdbService
   def search_by_name(query, type)
     tmdb_request("search/#{type}?query=#{query}")
   end
+
+  def multi_search(query)
+    tmdb_request("search/multi?query=#{query}")
+  end
+
   def search_by_id(id, type)
     tmdb_request("#{type}/#{id}")
   end

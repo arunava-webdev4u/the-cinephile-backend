@@ -20,6 +20,7 @@ Rails.application.routes.draw do
         collection do
           get :name
           get :id
+          get :multi
           get :trending
           get :popular
           get :top_rated
