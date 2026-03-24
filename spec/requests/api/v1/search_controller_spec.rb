@@ -183,4 +183,52 @@ RSpec.describe "Api::V1::SearchController", type: :request do
       end
     end
   end
+
+  describe "GET /api/v1/search/multi" do
+    let(:query) { "avengers" }
+    let(:success_response) { [ { id: 458, title: "The Avengers" }, { id: 136, title: "Avengers: Infinity War" } ] }
+    let(:headers) { { "Authorization" => "Bearer #{auth_token}" } }
+
+    before do
+      allow(tmdb_service).to receive(:multi_search).with(query).and_return(success_response)
+    end
+
+    context "with valid parameters" do
+      it "should call TmdbService" do
+        get "/api/v1/search/multi?query=#{query}", headers: headers
+        expect(tmdb_service).to have_received(:multi_search).with(query)
+      end
+
+      it "returns movies" do
+        get "/api/v1/search/multi?query=#{query}", headers: headers
+        expect(response.body).to eq(success_response.to_json)
+      end
+    end
+
+    context "when query parameter is blank" do
+      # it "should not call TmdbService" do
+      #   get "/api/v1/search/multi?query=#{}", headers: headers
+      #   expect(tmdb_service).not_to have_received(:multi_search)
+      # end
+
+      # it "returns bad request with error message" do
+      #   get "/api/v1/search/multi?query=#{}", headers: headers
+      #   expect(response).to have_http_status(:bad_request)
+      #   expect(JSON.parse(response.body)["error"]).to eq("query parameter is not present")
+      # end
+    end
+
+    context "when query parameter is missing" do
+      # it "should not call TmdbService" do
+      #   get "/api/v1/search/multi?", headers: headers
+      #   expect(tmdb_service).not_to have_received(:multi_search)
+      # end
+
+      # it "returns bad request with error message" do
+      #   get "/api/v1/search/multi?", headers: headers
+      #   expect(response).to have_http_status(:bad_request)
+      #   expect(JSON.parse(response.body)["error"]).to eq("query parameter is not present")
+      # end
+    end
+  end
 end
