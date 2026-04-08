@@ -26,6 +26,21 @@ class TmdbService
     tmdb_request("#{type}/#{id}")
   end
 
+  # Fetch multiple items in parallel for better performance
+  def fetch_batch(items)
+    threads = items.map do |item|
+      Thread.new(item) do |i|
+        begin
+          search_by_id(i[:item_id], i[:item_type])
+        rescue StandardError => e
+          nil
+        end
+      end
+    end
+
+    threads.map(&:value)
+  end
+
   # Trendings movie/tv
   def trending
     "trending"
