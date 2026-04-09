@@ -1,5 +1,6 @@
 class TmdbService
   require "net/http"
+  DEFAULT_TTL = 1.week
 
   BASE_URL_V3 = "https://api.themoviedb.org/3"
   VALID_SEARCH_TYPES = %w[movie tv person].freeze
@@ -23,7 +24,11 @@ class TmdbService
   end
 
   def search_by_id(id, type)
-    tmdb_request("#{type}/#{id}")
+    cache_key = "tmdb/#{type}/#{id}"
+
+    Rails.cache.fetch(cache_key, expires_in: DEFAULT_TTL) do
+      tmdb_request("#{type}/#{id}")
+    end
   end
 
   # Fetch multiple items in parallel for better performance
@@ -33,6 +38,7 @@ class TmdbService
         begin
           search_by_id(i[:item_id], i[:item_type])
         rescue StandardError => e
+          Rails.logger.error("[TmdbService] fetch_batch failed for #{i[:item_type]}/#{i[:item_id]}: #{e.message}")
           nil
         end
       end
