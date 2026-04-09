@@ -217,6 +217,10 @@ GEM
     rake (13.2.1)
     rdoc (6.13.1)
       psych (>= 4.0.0)
+    redis (5.4.1)
+      redis-client (>= 0.22.0)
+    redis-client (0.28.0)
+      connection_pool
     regexp_parser (2.10.0)
     reline (0.6.0)
       io-console (~> 0.5)
@@ -300,6 +304,7 @@ PLATFORMS
 DEPENDENCIES
   bcrypt (~> 3.1.7)
   brakeman
+  connection_pool
   debug
   dotenv-rails (~> 3.1.8)
   factory_bot_rails
@@ -312,6 +317,8 @@ DEPENDENCIES
   puma (~> 6.6)
   rack-cors
   rails (~> 8.0.2)
+  redis
+  redis-client
   rspec-rails
   rubocop-rails-omakase
   shoulda-matchers (~> 6.0)

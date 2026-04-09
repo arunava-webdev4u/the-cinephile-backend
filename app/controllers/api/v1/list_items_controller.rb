@@ -2,12 +2,20 @@ class Api::V1::ListItemsController < Api::V1::ApplicationController
     before_action :set_list
 
     def index
-        render json: @list.list_items, status: :ok
+        list_items = @list.list_items
+        tmdb_data = TmdbService.new.fetch_batch(list_items)
+
+        items_with_data = list_items.map.with_index do |item, index|
+            next if tmdb_data[index].nil?
+            Movies::ListSerializer.new(item, tmdb_data[index]).as_json
+        end.compact
+
+        render json: items_with_data, status: :ok
     end
 
     def create
         list_item = @list.list_items.new(list_item_params)
-        
+
         if list_item.save
             render json: list_item, status: :created
         else

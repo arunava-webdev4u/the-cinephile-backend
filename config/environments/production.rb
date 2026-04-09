@@ -40,8 +40,15 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Replace the default in-process memory cache store with a durable alternative.
-  # config.cache_store = :mem_cache_store
+  config.cache_store = :redis_cache_store, {
+    url:             ENV.fetch("REDIS_URL", "redis://localhost:6379/0"),
+    connect_timeout: 5,
+    read_timeout:    1,
+    write_timeout:   1,
+    error_handler: ->(method:, returning:, exception:) {
+      Rails.logger.error("[Redis] Cache error on :#{method} — #{exception.class}: #{exception.message}")
+    }
+  }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
