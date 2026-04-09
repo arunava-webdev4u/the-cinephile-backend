@@ -17,7 +17,7 @@ class Api::V1::SearchController < Api::V1::BaseController
   def multi
     result =  @tmdb_service.multi_search(search_params[:query])
 
-    return render json: result, status: :ok
+    render json: result, status: :ok
   end
 
   def trending

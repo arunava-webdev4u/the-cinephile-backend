@@ -15,16 +15,19 @@ Rails.application.configure do
   # Enable server timing.
   config.server_timing = true
 
-  # Enable/disable Action Controller caching. By default Action Controller caching is disabled.
-  # Run rails dev:cache to toggle Action Controller caching.
-  if Rails.root.join("tmp/caching-dev.txt").exist?
-    config.public_file_server.headers = { "cache-control" => "public, max-age=#{2.days.to_i}" }
-  else
-    config.action_controller.perform_caching = false
-  end
+  config.action_controller.perform_caching = true
+  config.public_file_server.headers = { "cache-control" => "public, max-age=#{2.days.to_i}" }
 
   # Change to :null_store to avoid any caching.
-  config.cache_store = :memory_store
+  config.cache_store = :redis_cache_store, {
+    url:             ENV.fetch("REDIS_URL", "redis://localhost:6379/0"),
+    connect_timeout: 5,
+    read_timeout:    1,
+    write_timeout:   1,
+    error_handler: ->(method:, returning:, exception:) {
+      Rails.logger.error("[Redis] Cache error on :#{method} — #{exception.class}: #{exception.message}")
+    }
+  }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
