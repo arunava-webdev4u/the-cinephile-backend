@@ -1,7 +1,19 @@
+require "sidekiq/web"
+
+# API-only mode strips session middleware, but Sidekiq::Web needs it for CSRF.
+# Wrap it with the minimal session/cookie stack just for this mount.
+SidekiqWebApp = Rack::Builder.new do
+  use ActionDispatch::Cookies
+  use ActionDispatch::Session::CookieStore, key: "_cinephile_sidekiq_session"
+  run Sidekiq::Web
+end
+
 Rails.application.routes.draw do
   # # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
+
+  mount SidekiqWebApp => "/sidekiq" # access it at http://localhost:3000/sidekiq
 
   # Defines the root path route ("/")
   root "api/v1/homepage#index"

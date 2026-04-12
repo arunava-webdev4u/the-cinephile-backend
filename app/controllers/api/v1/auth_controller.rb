@@ -36,9 +36,18 @@ class Api::V1::AuthController < Api::V1::BaseController
         end
 
         if verification.save!
-            registration_details = { email: user.email, first_name: user.first_name, last_name: user.last_name, otp_code: verification.otp_code }
+            # Sidekiq serializes args as JSON — symbol keys are not valid JSON types.
+            # stringify_keys here so perform_async doesn't raise ArgumentError.
+            registration_details = {
+              "email"      => user.email,
+              "first_name" => user.first_name,
+              "last_name"  => user.last_name,
+              "otp_code"   => verification.otp_code
+            }
 
-            SmtpGmailService.new.send_verification_email(registration_details) if Rails.env.production?
+            # SmtpGmailService.new.send_verification_email(registration_details) if Rails.env.production?
+            # SmtpGmailService.new.send_verification_email(registration_details)
+            SendVerificationEmailWorker.perform_async(registration_details)
             render json: { message: "Please verify your email with the OTP sent" }, status: :created
         else
             render json: { errors: pending.errors }, status: :unprocessable_entity
