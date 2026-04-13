@@ -23,25 +23,28 @@ class Api::V1::AuthController < Api::V1::BaseController
 
         if user.nil?    # user does not exist
             user = User.new(auth_params.except(:confirm_password))
-
             return render json: { errors: user.errors }, status: :unprocessable_entity unless user.valid?
-            return render json: { errors: user.errors }, status: :unprocessable_entity unless user.save
+
+            begin
+                user.save!
+            rescue ActiveRecord::RecordNotUnique
+                user = User.find_by!(email: auth_params[:email])
+            end
         end
 
-        verification = user.verification
-        if verification.present?
-            verification.regenerate!(ttl: 10.minutes)
-        else
-            verification = user.create_verification_record
-        end
+        verification = user.verification || user.build_verification
+        verification.assign_attributes(
+            otp_code: UserVerification.generate_otp,
+            otp_expires_at: 10.minutes.from_now,
+            verified: false,
+            verified_at: nil
+        )
 
-        if verification.save!
-            registration_details = { email: user.email, first_name: user.first_name, last_name: user.last_name, otp_code: verification.otp_code }
-
-            SmtpGmailService.new.send_verification_email(registration_details) if Rails.env.production?
+        if verification.save
+            SendVerificationEmailWorker.perform_async(user.id)
             render json: { message: "Please verify your email with the OTP sent" }, status: :created
         else
-            render json: { errors: pending.errors }, status: :unprocessable_entity
+            render json: { errors: verification.errors }, status: :unprocessable_entity
         end
     end
 
