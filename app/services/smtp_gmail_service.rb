@@ -75,6 +75,19 @@ class SmtpGmailService
         end
     end
 
+    # Bang variant — raises on failure so Sidekiq can retry the job
+    def send_verification_email!(registration_details)
+        raise EmailError, "Registration details cannot be nil" if registration_details.nil?
+        raise EmailError, "Registration email is required" if registration_details[:email].nil?
+        raise EmailError, "Registration otp_code is required" if registration_details[:otp_code].nil?
+
+        mail = build_verification_email(registration_details)
+        deliver_email(mail)
+
+        Rails.logger.info "Verification email sent successfully to #{registration_details[:email]}"
+    end
+
+
 
     def validate_configuration!
         missing_configs = []

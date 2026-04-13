@@ -13,6 +13,6 @@ REDIS_CACHE = ConnectionPool.new(
 end
 
 # DB 1 — Sidekiq
-# REDIS_SIDEKIQ = ConnectionPool.new(size: 10, timeout: 5) do
-#   Redis.new(redis_config.merge(url: ENV.fetch("REDIS_SIDEKIQ_URL", "redis://localhost:6379/1")))
-# end
+# Note: Sidekiq manages its own Redis connection pool internally via config/initializers/sidekiq.rb.
+# Do NOT define a REDIS_SIDEKIQ pool here with short read_timeout — Sidekiq's BRPOP command
+# blocks for several seconds waiting for jobs and requires a much longer read timeout.
