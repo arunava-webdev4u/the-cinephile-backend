@@ -1,5 +1,4 @@
 require 'rails_helper'
-require 'active_support/testing/time_helpers'
 
 RSpec.describe User, type: :model do
   include ActiveSupport::Testing::TimeHelpers
@@ -34,6 +33,18 @@ RSpec.describe User, type: :model do
         user.first_name = ""
         expect(user).not_to be_valid
         expect(user.errors[:first_name]).to include('is too short (minimum is 1 character)')
+      end
+
+      it 'does not accept names with spaces' do
+        user.first_name = 'John Paul'
+        expect(user).not_to be_valid
+        expect(user.errors[:first_name]).to include('must contain only alphabets')
+      end
+
+      it 'does not accept names with hyphens' do
+        user.first_name = 'Mary-Jane'
+        expect(user).not_to be_valid
+        expect(user.errors[:first_name]).to include('must contain only alphabets')
       end
     end
 
@@ -177,6 +188,12 @@ RSpec.describe User, type: :model do
           expect(user).not_to be_valid
           expect(user.errors[:country]).to include("must be greater than 0")
         end
+
+        it 'can not be 0' do
+          user.country = 0
+          expect(user).not_to be_valid
+          expect(user.errors[:country]).to include("must be greater than 0")
+        end
       end
 
       # ######## Future #########
@@ -240,6 +257,12 @@ RSpec.describe User, type: :model do
           expect(user.jti).to be_present
           expect(user.jti).to match(/\A[\w\d\-]{36}\z/)
         end
+
+        it 'gives each user a unique jti' do
+          user_a = create(:user)
+          user_b = create(:user)
+          expect(user_a.jti).not_to eq(user_b.jti)
+        end
       end
 
       describe 'after_create :create_default_lists' do
@@ -292,6 +315,11 @@ RSpec.describe User, type: :model do
           end
         end
 
+        it 'returns nil when date_of_birth is blank' do
+          user.date_of_birth = nil
+          expect(user.age).to be_nil
+        end
+
         context 'when date_of_birth is Feb 29 on a leap year' do
           it 'returns the correct age on a non-leap year' do
             user.date_of_birth = Date.new(2004, 2, 29)  # Leap year birthday
@@ -320,17 +348,70 @@ RSpec.describe User, type: :model do
       describe '#adult?' do
         it 'returns true for adults' do
           user.date_of_birth = 25.years.ago.to_date
-          expect(user).to be_valid
+          expect(user.adult?).to be true
         end
 
         it 'returns false for users under 18' do
           user.date_of_birth = 16.years.ago.to_date
-          expect(user).to be_valid
+          expect(user.adult?).to be false
         end
 
-        it 'returns true for 18 years' do
+        it 'returns true for exactly 18 years old' do
           user.date_of_birth = 18.years.ago.to_date
-          expect(user).to be_valid
+          expect(user.adult?).to be true
+        end
+
+        it 'returns nil when date_of_birth is not set' do
+          user.date_of_birth = nil
+          expect(user.adult?).to be_falsey
+        end
+      end
+
+      describe '#verified?' do
+        it 'returns false when no verification record exists' do
+          expect(user.reload.verified?).to be false
+        end
+
+        it 'returns false when verification record exists but is not verified' do
+          create(:user_verification, user: user, verified: false)
+          expect(user.reload.verified?).to be false
+        end
+
+        it 'returns true when verification record is verified' do
+          create(:user_verification, user: user, verified: true)
+          expect(user.reload.verified?).to be true
+        end
+      end
+
+      describe '#invalidate_auth_token' do
+        it 'changes the jti to a new UUID' do
+          old_jti = user.jti
+          user.invalidate_auth_token
+          expect(user.reload.jti).not_to eq(old_jti)
+        end
+
+        it 'persists the new jti to the database' do
+          user.invalidate_auth_token
+          expect(User.find(user.id).jti).to eq(user.jti)
+        end
+      end
+
+      describe '#create_verification_record' do
+        it 'creates a UserVerification associated with the user' do
+          expect { user.create_verification_record }.to change { UserVerification.count }.by(1)
+        end
+
+        it 'generates a valid 6-digit OTP code' do
+          user.create_verification_record
+          expect(user.verification.otp_code.length).to eq(6)
+          expect(user.verification.otp_code.to_i).to be_between(100_000, 999_999)
+        end
+
+        it 'sets otp_expires_at to approximately 10 minutes from now' do
+          freeze_time do
+            user.create_verification_record
+            expect(user.verification.otp_expires_at).to be_within(1.second).of(10.minutes.from_now)
+          end
         end
       end
     end
@@ -346,6 +427,16 @@ RSpec.describe User, type: :model do
 
       it "has dependent destroy on lists" do
         expect { user.destroy }.to change { List.count }.by(-user.lists.count)
+      end
+
+      it 'has one verification' do
+        association = described_class.reflect_on_association(:verification)
+        expect(association.macro).to eq(:has_one)
+      end
+
+      it 'destroys verification when user is destroyed' do
+        create(:user_verification, user: user)
+        expect { user.destroy }.to change { UserVerification.count }.by(-1)
       end
     end
 
