@@ -103,12 +103,12 @@ GEM
       railties (>= 5.0.0)
     faker (3.5.1)
       i18n (>= 1.8.11, < 2)
-    faraday (2.13.4)
+    faraday (2.14.1)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
-    faraday-net_http (3.4.1)
-      net-http (>= 0.5.0)
+    faraday-net_http (3.4.2)
+      net-http (~> 0.5)
     globalid (1.2.1)
       activesupport (>= 6.1)
     i18n (1.14.7)
@@ -118,7 +118,7 @@ GEM
       pp (>= 0.6.0)
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
-    json (2.10.2)
+    json (2.19.3)
     jwt (2.10.1)
       base64
     language_server-protocol (3.17.0.4)
@@ -136,8 +136,8 @@ GEM
     method_source (1.1.0)
     mini_mime (1.1.5)
     minitest (5.25.5)
-    net-http (0.6.0)
-      uri
+    net-http (0.9.1)
+      uri (>= 0.11.1)
     net-imap (0.5.6)
       date
       net-protocol
@@ -295,7 +295,7 @@ GEM
     unicode-display_width (3.1.4)
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
-    uri (1.0.3)
+    uri (1.1.1)
     useragent (0.16.11)
     websocket-driver (0.7.7)
       base64
@@ -315,7 +315,7 @@ DEPENDENCIES
   dotenv-rails (~> 3.1.8)
   factory_bot_rails
   faker
-  faraday (~> 2.7)
+  faraday (~> 2.14)
   jwt
   mail (~> 2.8)
   pg (~> 1.1)
