@@ -1,8 +1,8 @@
 class Api::V1::UsersController < Api::V1::ApplicationController
-    def index
-        @user = User.all
-        render json: @user.as_json, status: :ok
-    end
+    # def index
+    #     @user = User.all
+    #     render json: @user.as_json, status: :ok
+    # end
 
     def show
         @user = User.find(params[:id])
