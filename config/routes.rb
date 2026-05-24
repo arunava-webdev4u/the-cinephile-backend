@@ -27,7 +27,7 @@ Rails.application.routes.draw do
         delete :logout
       end
 
-      resources :users, only: [ :show, :update, :destroy ]
+      resource :user, controller: :user, only: [ :show, :update, :destroy ]
       resources :search, only: [] do
         collection do
           get :name
