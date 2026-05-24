@@ -36,9 +36,9 @@ class TmdbService
     threads = items.map do |item|
       Thread.new(item) do |i|
         begin
-          search_by_id(i[:item_id], i[:item_type])
+          search_by_id(i.item_id, i.item_type)
         rescue StandardError => e
-          Rails.logger.error("[TmdbService] fetch_batch failed for #{i[:item_type]}/#{i[:item_id]}: #{e.message}")
+          Rails.logger.error("[TmdbService] fetch_batch failed for #{i.item_type}/#{i.item_id}: #{e.message}")
           nil
         end
       end
