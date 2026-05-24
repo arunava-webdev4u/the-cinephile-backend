@@ -7,7 +7,7 @@ class Api::V1::ListsController < Api::V1::ApplicationController
     end
 
     def show
-        @list = List.where(id: params[:id], type: params[:type])
+        @list = List.where(id: params[:id], type: params[:type], user_id: @current_user.id)
         render json: @list.last, status: :ok
     end
 
@@ -22,7 +22,7 @@ class Api::V1::ListsController < Api::V1::ApplicationController
     end
 
     def update
-        @list = CustomList.find(params[:id])
+        @list = CustomList.find_by(id: params[:id], user_id: @current_user.id)
 
         unless @list
             return render json: { error: "List not found" }, status: :not_found
@@ -31,19 +31,22 @@ class Api::V1::ListsController < Api::V1::ApplicationController
         if @list.update(list_params)
             render json: @list, status: :ok
         else
-            render json: { error: @user.errors }, status: :unprocessable_entity
+            render json: { errors: @list.errors }, status: :unprocessable_entity
         end
     end
 
     def destroy
-        @list = CustomList.find(params[:id])
+        @list = CustomList.find_by(id: params[:id], user_id: @current_user.id)
+        
+        unless @list
+            return render json: { error: "List not found" }, status: :not_found
+        end
+
         if @list.destroy
             render json: { message: "List deleted successfully" }, status: :ok
         else
             render json: { errors: @list.errors }, status: :unprocessable_entity
         end
-    rescue ActiveRecord::RecordNotFound
-            render json: { error: "List not found" }, status: :unprocessable_entity
     end
 
     private
