@@ -218,6 +218,12 @@ RSpec.describe "Api::V1::ListsController", type: :request do
         expect(response).to have_http_status(:unprocessable_entity)
         expect(JSON.parse(response.body)).to include("errors")
       end
+
+      it "does not route PATCH /api/v1/custom_list/:id" do
+        list = FactoryBot.create(:custom_list, user_id: user.id)
+        patch "/api/v1/custom_list/#{list.id}", headers: headers
+        expect(response).to have_http_status(:not_found)
+      end
     end
 
     describe "DELETE /api/v1/custom_list/:id" do
@@ -241,6 +247,13 @@ RSpec.describe "Api::V1::ListsController", type: :request do
 
       it "returns not found for non-existent list" do
         delete "/api/v1/custom_list/99999", headers: headers
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "returns not found when trying to delete a default list" do
+        default_list = user.lists.where(type: "DefaultList").first
+        delete "/api/v1/custom_list/#{default_list.id}", headers: headers
+
         expect(response).to have_http_status(:not_found)
       end
     end
