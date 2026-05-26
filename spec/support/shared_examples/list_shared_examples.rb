@@ -221,3 +221,62 @@ RSpec.shared_examples "a list" do
         end
     end
 end
+
+# ---------------------------------------------------------------------------
+# Shared examples for STI subtype-specific behaviour.
+# Both CustomList and DefaultList share the same association structure and
+# expose the same three permission methods — only the *expected values* differ.
+#
+# Parameters:
+#   factory           - factory name to use (:custom_list / :default_list)
+#   can_be_created    - expected return value of #can_be_created? (true/false)
+#   can_be_deleted    - expected return value of #can_be_deleted? (true/false)
+#   can_be_updated    - expected return value of #can_be_updated? (true/false)
+#   destroyed_count   - expected change in the subtype count when the user is
+#                       destroyed. Pass a lambda so it is evaluated lazily
+#                       inside the example (e.g. -> { -1 } or -> { -user.lists.count })
+# ---------------------------------------------------------------------------
+RSpec.shared_examples "a list subtype" do |factory:, can_be_created:, can_be_deleted:, can_be_updated:, destroyed_count:|
+    let(:user) { create(:user) }
+    let(:list) { create(factory, user_id: user.id) }
+
+    # ── Associations ────────────────────────────────────────────────────────
+    describe "associations" do
+        it "has many list_items" do
+            association = described_class.reflect_on_association(:list_items)
+            expect(association.macro).to eq(:has_many)
+        end
+
+        it "list_items are destroyed when the list is destroyed" do
+            ListItem.create!(list: list, item_id: 1, item_type: "movie")
+            expect { list.destroy }.to change { ListItem.count }.by(-1)
+        end
+
+        it "is destroyed when its user is destroyed" do
+            list  # ensure the record is persisted before counting
+            expected = instance_exec(&destroyed_count)
+            expect { user.destroy }.to change { described_class.count }.by(expected)
+        end
+    end
+
+    # ── Instance methods: CRUD permissions ──────────────────────────────────
+    describe "instance methods" do
+        describe "#can_be_created?" do
+            it "returns #{can_be_created}" do
+                expect(list.can_be_created?).to be can_be_created
+            end
+        end
+
+        describe "#can_be_deleted?" do
+            it "returns #{can_be_deleted}" do
+                expect(list.can_be_deleted?).to be can_be_deleted
+            end
+        end
+
+        describe "#can_be_updated?" do
+            it "returns #{can_be_updated}" do
+                expect(list.can_be_updated?).to be can_be_updated
+            end
+        end
+    end
+end

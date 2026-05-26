@@ -3,6 +3,7 @@ class Api::V1::ListItemsController < Api::V1::ApplicationController
 
     def index
         list_items = @list.list_items
+        # what if no list items?
         tmdb_data = TmdbService.new.fetch_batch(list_items)
 
         items_with_data = list_items.map.with_index do |item, index|

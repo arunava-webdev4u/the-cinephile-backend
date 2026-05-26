@@ -8,6 +8,9 @@ class TmdbService
   # Custom exceptions for better error handling
   class TmdbError < StandardError; end
   class AuthenticationError < TmdbError; end
+  class RateLimitError < TmdbError; end   # new
+  class ServerError < TmdbError; end      # optional, for 5xx
+  class NotFoundError < TmdbError; end    # optional, for 404
 
   def initialize
     @api_token = ENV["TMDB_API_READ_ACCESS_TOKEN"]
@@ -36,9 +39,9 @@ class TmdbService
     threads = items.map do |item|
       Thread.new(item) do |i|
         begin
-          search_by_id(i[:item_id], i[:item_type])
+          search_by_id(i.item_id, i.item_type)
         rescue StandardError => e
-          Rails.logger.error("[TmdbService] fetch_batch failed for #{i[:item_type]}/#{i[:item_id]}: #{e.message}")
+          Rails.logger.error("[TmdbService] fetch_batch failed for #{i.item_type}/#{i.item_id}: #{e.message}")
           nil
         end
       end
@@ -131,11 +134,36 @@ class TmdbService
     http = Net::HTTP.new(url.host, url.port)
     http.use_ssl = true
 
+    # Timeouts: 5s open, 10s read
+    http.open_timeout = 5
+    http.read_timeout = 10
+
     request = Net::HTTP::Get.new(url)
     request["accept"] = "application/json"
-    request["Authorization"] = "Bearer " + @api_token
+    request["Authorization"] = "Bearer #{@api_token}"
 
     response = http.request(request)
-    JSON.parse(response.body)
+
+    # Check HTTP status codes
+    case response.code.to_i
+    when 200
+      JSON.parse(response.body)
+    when 401, 403
+      raise AuthenticationError, "Invalid API key or unauthorized"
+    when 404
+      raise NotFoundError, "Resource not found"
+    when 429
+      raise RateLimitError, "Rate limit exceeded"
+    when 500..599
+      raise ServerError, "TMDB server error (#{response.code})"
+    else
+      raise TmdbError, "Unexpected response (#{response.code})"
+    end
+  rescue Net::OpenTimeout, Net::ReadTimeout => e
+    raise TmdbError, "Network timeout: #{e.message}"
+  rescue JSON::ParserError => e
+    raise TmdbError, "Invalid JSON response: #{e.message}"
+  rescue SocketError, Errno::ECONNREFUSED, Errno::ECONNRESET => e
+    raise TmdbError, "Network error: #{e.message}"
   end
 end
