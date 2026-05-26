@@ -2,6 +2,8 @@ class Api::V1::SearchController < Api::V1::BaseController
   before_action :initialize_tmdb_service
   before_action :validate_search_params, only: [ :name, :id ]
 
+  rescue_from TmdbService::TmdbError, with: :handle_tmdb_error
+
   def name
     results = @tmdb_service.search_by_name(search_params[:query], search_params[:type])
 
@@ -78,6 +80,12 @@ class Api::V1::SearchController < Api::V1::BaseController
   private
   def initialize_tmdb_service
     @tmdb_service ||= TmdbService.new
+  end
+
+  def handle_tmdb_error(exception)
+    Rails.logger.error "TMDB API error: #{exception.message}"
+    render json: { error: "External service unavailable", details: exception.message },
+           status: :service_unavailable
   end
 
   def search_params
