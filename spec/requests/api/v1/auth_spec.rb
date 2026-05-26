@@ -409,34 +409,49 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 expect(JSON.parse(response.body)["error"]).to include("Already verified")
             end
 
-            context "with invalid parameters" do
-                it "regects without email" do
-                    post "/api/v1/auth/verify_email", params: { otp: verification.otp_code }.to_json, headers: headers
+            it "sends welcome email in production environment" do
+                allow(Rails.env).to receive(:production?).and_return(true)
 
-                    expect(response).to have_http_status(:not_found)
-                    expect(JSON.parse(response.body)["error"]).to include("Account not found")
-                end
+                email_service = instance_double(SmtpGmailService)
+                allow(SmtpGmailService).to receive(:new).and_return(email_service)
+                expect(email_service).to receive(:send_welcome_email).with(user)
 
-                it "regects without otp" do
-                    post "/api/v1/auth/verify_email", params: { email: user.email }.to_json, headers: headers
+                post "/api/v1/auth/verify_email",
+                    params: { email: user.email, otp: verification.otp_code }.to_json,
+                    headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
-                    expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
-                end
+                expect(response).to have_http_status(:created)
+                expect(JSON.parse(response.body)).to include("token", "user")
+            end
+        end
 
-                it "rejects invalid email" do
-                    post "/api/v1/auth/verify_email", params: { email: "ax4!%5&g.@gmail.com", otp: verification.otp_code }.to_json, headers: headers
+        context "with invalid parameters" do
+            it "regects without email" do
+                post "/api/v1/auth/verify_email", params: { otp: verification.otp_code }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:not_found)
-                    expect(JSON.parse(response.body)["error"]).to include("Account not found")
-                end
+                expect(response).to have_http_status(:not_found)
+                expect(JSON.parse(response.body)["error"]).to include("Account not found")
+            end
 
-                it "rejects invalid otp" do
-                    post "/api/v1/auth/verify_email", params: { email: user.email, otp: "#2f6f3" }.to_json, headers: headers
+            it "regects without otp" do
+                post "/api/v1/auth/verify_email", params: { email: user.email }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
-                    expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
-                end
+                expect(response).to have_http_status(:unprocessable_entity)
+                expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
+            end
+
+            it "rejects invalid email" do
+                post "/api/v1/auth/verify_email", params: { email: "ax4!%5&g.@gmail.com", otp: verification.otp_code }.to_json, headers: headers
+
+                expect(response).to have_http_status(:not_found)
+                expect(JSON.parse(response.body)["error"]).to include("Account not found")
+            end
+
+            it "rejects invalid otp" do
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: "#2f6f3" }.to_json, headers: headers
+
+                expect(response).to have_http_status(:unprocessable_entity)
+                expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
             end
         end
     end
