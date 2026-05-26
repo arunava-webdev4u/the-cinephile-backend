@@ -67,6 +67,57 @@ RSpec.describe "Api::V1::ListsController", type: :request do
         expect(JSON.parse(response.body)).to be_nil
       end
     end
+
+    describe "Permissions - DefaultList is read-only" do
+      let(:default_list) { user.lists.where(type: "DefaultList").first }
+
+      it "blocks PUT /api/v1/default_list/:id" do
+        put "/api/v1/default_list/#{default_list.id}",
+            params: { list: { name: "Hacked Name" } }.to_json,
+            headers: headers
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "blocks PATCH /api/v1/default_list/:id" do
+        patch "/api/v1/default_list/#{default_list.id}",
+              params: { list: { name: "Hacked Name" } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "blocks DELETE /api/v1/default_list/:id" do
+        delete "/api/v1/default_list/#{default_list.id}", headers: headers
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "blocks POST /api/v1/default_list" do
+        post "/api/v1/default_list",
+            params: { list: { name: "New List" } }.to_json,
+            headers: headers
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "does not mutate the default list on a PUT attempt" do
+        original_name = default_list.name
+
+        put "/api/v1/default_list/#{default_list.id}",
+            params: { list: { name: "Mutated Name" } }.to_json,
+            headers: headers
+
+        expect(default_list.reload.name).to eq(original_name)
+      end
+
+      it "does not destroy the default list on a DELETE attempt" do
+        expect {
+          delete "/api/v1/default_list/#{default_list.id}", headers: headers
+        }.not_to change(List, :count)
+      end
+
+    end
   end
 
   context "for custom_lists" do
