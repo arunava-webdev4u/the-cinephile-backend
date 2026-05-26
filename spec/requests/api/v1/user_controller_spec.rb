@@ -24,7 +24,7 @@ RSpec.describe "Api::V1::UserController", type: :request do
     end
   end
 
-#   describe "GET /api/v1/user" do
+  describe "GET /api/v1/user" do
 #     context "when user exists" do
 #       it "returns the user profile" do
 #         get "/api/v1/user", headers: headers
@@ -85,7 +85,7 @@ RSpec.describe "Api::V1::UserController", type: :request do
 #         expect(response).to have_http_status(:not_found)
 #       end
 #     end
-#   end
+  end
 
 #   describe "PUT /api/v1/user" do
 #     let(:valid_params) do
