@@ -1,7 +1,16 @@
 require "rails_helper"
+require "sidekiq/testing"
 
 RSpec.describe "Api::V1::AuthController", type: :request do
     let(:headers) { { "CONTENT_TYPE" => "application/json" } }
+
+    before do
+        Sidekiq::Testing.fake!
+    end
+
+    after do
+        Sidekiq::Worker.clear_all
+    end
 
     describe "POST /api/v1/auth/login" do
         let!(:user) { create(:user, password: "secret123", password_confirmation: "secret123") }
@@ -103,6 +112,18 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 verification = User.find_by(email: register_params[:user][:email]).verification
                 expect(verification).not_to be_nil
                 expect(verification.verified).to be_falsey
+            end
+
+            it "generates a 6-digit OTP code" do
+                post "/api/v1/auth/register", params: register_params.to_json, headers: headers
+                verification = User.find_by(email: register_params[:user][:email]).verification
+                expect(verification.otp_code).to match(/^\d{6}$/)
+            end
+
+            it "enqueues SendVerificationEmailWorker" do
+                expect {
+                    post "/api/v1/auth/register", params: register_params.to_json, headers: headers
+                }.to change { SendVerificationEmailWorker.jobs.size }.by(1)
             end
 
             it "fails if passwords do not match" do
