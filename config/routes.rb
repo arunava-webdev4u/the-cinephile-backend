@@ -45,7 +45,8 @@ Rails.application.routes.draw do
         resources :list_items, only: [ :index, :create, :destroy ]
       end
 
-      resources :custom_list, controller: :lists, type: "CustomList" do
+      resources :custom_list, controller: :lists, type: "CustomList", except: [:update] do
+        put :update, on: :member
         resources :list_items, only: [ :index, :create, :destroy ]
       end
     end

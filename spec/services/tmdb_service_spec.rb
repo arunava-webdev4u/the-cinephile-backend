@@ -29,11 +29,13 @@ RSpec.describe TmdbService, type: :service do
 
             allow(Net::HTTP).to receive(:new).with(url.host, url.port).and_return(http_double)
             allow(http_double).to receive(:use_ssl=).and_return(true)
+            allow(http_double).to receive(:open_timeout=)   # add this
+            allow(http_double).to receive(:read_timeout=)   # add this
             allow(Net::HTTP::Get).to receive(:new).and_return(request_double)
             allow(request_double).to receive(:[]=).with("accept", "application/json")
             allow(request_double).to receive(:[]=).with("Authorization", "Bearer " + api_key)
 
-            response_double = instance_double(Net::HTTPResponse, body: '{"id":123,"title":"Titanic"}')
+            response_double = instance_double(Net::HTTPResponse, body: '{"id":123,"title":"Titanic"}', code: "200")
             allow(http_double).to receive(:request).with(request_double).and_return(response_double)
 
             service = described_class.new
@@ -42,20 +44,23 @@ RSpec.describe TmdbService, type: :service do
             expect(result).to eq({ "id" => 123, "title" => "Titanic" })
         end
 
-        it "raises JSON Parse error if the response in not in correct format" do
+        it "raises JSON Parse error if the response is not in correct format" do
             http_double = instance_double(Net::HTTP)
             request_double = instance_double(Net::HTTP::Get)
 
             allow(Net::HTTP).to receive(:new).with(url.host, url.port).and_return(http_double)
             allow(http_double).to receive(:use_ssl=).and_return(true)
+            allow(http_double).to receive(:open_timeout=)
+            allow(http_double).to receive(:read_timeout=)
             allow(Net::HTTP::Get).to receive(:new).and_return(request_double)
             allow(request_double).to receive(:[]=)
 
-            response_double = instance_double(Net::HTTPResponse, body: "Invalid JSON")
+            response_double = instance_double(Net::HTTPResponse, body: "Invalid JSON", code: "200")
             allow(http_double).to receive(:request).and_return(response_double)
 
             service = described_class.new
-            expect { service.send(:tmdb_request, "invalid") }.to raise_error(JSON::ParserError)
+            expect { service.send(:tmdb_request, "invalid") }
+                .to raise_error(TmdbService::TmdbError, /Invalid JSON response/)
         end
     end
 
@@ -164,5 +169,79 @@ RSpec.describe TmdbService, type: :service do
       # recommendations
       # watch_providers
       # videos
+    end
+
+    describe "error handling" do
+        let(:http_double) { instance_double(Net::HTTP) }
+        let(:request_double) { instance_double(Net::HTTP::Get) }
+
+        before do
+            allow(Net::HTTP).to receive(:new).and_return(http_double)
+            allow(http_double).to receive(:use_ssl=).and_return(true)
+            allow(http_double).to receive(:open_timeout=)
+            allow(http_double).to receive(:read_timeout=)
+            allow(Net::HTTP::Get).to receive(:new).and_return(request_double)
+            allow(request_double).to receive(:[]=)
+        end
+
+        it "raises AuthenticationError on 401 response" do
+            response_double = double("response", code: "401", body: "Unauthorized")
+            allow(http_double).to receive(:request).and_return(response_double)
+
+            service = described_class.new
+            expect { service.send(:tmdb_request, "movie/550") }
+            .to raise_error(TmdbService::AuthenticationError, /Invalid API key/)
+        end
+
+        it "raises NotFoundError on 404 response" do
+            response_double = double("response", code: "404", body: "Not Found")
+            allow(http_double).to receive(:request).and_return(response_double)
+
+            service = described_class.new
+            expect { service.send(:tmdb_request, "movie/999") }
+            .to raise_error(TmdbService::NotFoundError, /Resource not found/)
+        end
+
+        it "raises RateLimitError on 429 response" do
+            response_double = double("response", code: "429", body: "Too Many Requests")
+            allow(http_double).to receive(:request).and_return(response_double)
+
+            service = described_class.new
+            expect { service.send(:tmdb_request, "search/movie?query=test") }
+            .to raise_error(TmdbService::RateLimitError, /Rate limit exceeded/)
+        end
+
+        it "raises ServerError on 500 response" do
+            response_double = double("response", code: "500", body: "Internal Server Error")
+            allow(http_double).to receive(:request).and_return(response_double)
+
+            service = described_class.new
+            expect { service.send(:tmdb_request, "trending") }
+            .to raise_error(TmdbService::ServerError, /TMDB server error/)
+        end
+
+        it "raises TmdbError on network timeout (OpenTimeout)" do
+            allow(http_double).to receive(:request).and_raise(Net::OpenTimeout.new("execution expired"))
+
+            service = described_class.new
+            expect { service.send(:tmdb_request, "movie/550") }
+            .to raise_error(TmdbService::TmdbError, /Network timeout/)
+        end
+
+        it "raises TmdbError on network timeout (ReadTimeout)" do
+            allow(http_double).to receive(:request).and_raise(Net::ReadTimeout.new("execution expired"))
+
+            service = described_class.new
+            expect { service.send(:tmdb_request, "movie/550") }
+            .to raise_error(TmdbService::TmdbError, /Network timeout/)
+        end
+
+        it "raises TmdbError on socket error" do
+            allow(http_double).to receive(:request).and_raise(Errno::ECONNREFUSED.new)
+
+            service = described_class.new
+            expect { service.send(:tmdb_request, "movie/550") }
+            .to raise_error(TmdbService::TmdbError, /Network error/)
+        end
     end
 end
