@@ -203,8 +203,6 @@ RSpec.describe "Api::V1::ListsController", type: :request do
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)["name"]).to eq("Updated Name")
-<<<<<<< make-claude-code-compatible
-=======
       end
 
       it "does not allow updating another user's list" do
@@ -225,47 +223,9 @@ RSpec.describe "Api::V1::ListsController", type: :request do
         list = FactoryBot.create(:custom_list, user_id: user.id)
         patch "/api/v1/custom_list/#{list.id}", headers: headers
         expect(response).to have_http_status(:not_found)
->>>>>>> main
-      end
-
-<<<<<<< make-claude-code-compatible
-      it "does not allow updating another user's list" do
-        other_list = FactoryBot.create(:custom_list, user_id: other_user.id)
-        put "/api/v1/custom_list/#{other_list.id}", params: update_params.to_json, headers: headers
-        
-        expect(response).to have_http_status(:not_found)
-      end
-
-      it "returns unprocessable entity on failure and uses correct error object" do
-        # Trigger validation failure (assuming name can't be blank)
-        put "/api/v1/custom_list/#{list.id}", params: { list: { name: "" } }.to_json, headers: headers
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body)).to include("errors")
       end
     end
 
-    describe "DELETE /api/v1/custom_list/:id" do
-      it "deletes an existing custom list" do
-        list = FactoryBot.create(:custom_list, user_id: user.id)
-        expect {
-          delete "/api/v1/custom_list/#{list.id}", headers: headers
-        }.to change(CustomList, :count).by(-1)
-        
-        expect(response).to have_http_status(:ok)
-      end
-
-      it "does not allow deleting another user's list" do
-        other_list = FactoryBot.create(:custom_list, user_id: other_user.id)
-        expect {
-          delete "/api/v1/custom_list/#{other_list.id}", headers: headers
-        }.not_to change(CustomList, :count)
-        
-        expect(response).to have_http_status(:not_found)
-      end
-
-      it "returns not found for non-existent list" do
-        delete "/api/v1/custom_list/99999", headers: headers
-=======
     describe "DELETE /api/v1/custom_list/:id" do
       it "deletes an existing custom list" do
         list = FactoryBot.create(:custom_list, user_id: user.id)
@@ -294,7 +254,6 @@ RSpec.describe "Api::V1::ListsController", type: :request do
         default_list = user.lists.where(type: "DefaultList").first
         delete "/api/v1/custom_list/#{default_list.id}", headers: headers
 
->>>>>>> main
         expect(response).to have_http_status(:not_found)
       end
     end
