@@ -37,6 +37,15 @@ class Api::V1::ListItemsController < Api::V1::ApplicationController
 
     private
     def set_list
+        valid_types = ["CustomList", "DefaultList"]
+        
+        unless valid_types.include?(params[:type])
+            return render json: {
+                error: "Invalid list type",
+                valid_types: valid_types
+            }, status: :bad_request
+        end
+        
         list_id = params[:custom_list_id] || params[:default_list_id]
         
         if params[:type] == "CustomList"

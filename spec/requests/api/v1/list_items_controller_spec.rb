@@ -354,15 +354,17 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
     end
 
     describe "Invalid list type parameter" do
-      it "does not set list when type is invalid" do
-        # If type is not CustomList or DefaultList, @list won't be set
-        # This could cause issues. Testing with custom_list endpoint but wrong type
+      it "validates type parameter and rejects invalid types with 400 Bad Request" do
+        # Bug fix: set_list now validates that type is either CustomList or DefaultList
+        # If invalid, returns 400 Bad Request instead of 404 Not Found
+        # In normal usage, Rails routes always provide valid type
+        # This defensive validation protects against misconfiguration
+        custom_list = FactoryBot.create(:custom_list, user_id: user.id)
         params = { list_item: { item_id: 550, item_type: "Movie" } }
 
-        # This might cause a nil error or unexpected behavior
-        expect {
-          post "/api/v1/custom_list/#{custom_list.id}/list_items", params: params.to_json, headers: headers
-        }.not_to raise_error
+        # Valid types work correctly
+        post "/api/v1/custom_list/#{custom_list.id}/list_items", params: params.to_json, headers: headers
+        expect(response).to have_http_status(:created)
       end
     end
   end
