@@ -25,17 +25,28 @@ class Api::V1::ListItemsController < Api::V1::ApplicationController
     end
 
     def destroy
-        list_item = @list.list_items.find(params[:id])
+        list_item = @list.list_items.find_by(id: params[:id])
+        
+        unless list_item
+            return render json: { error: "List item not found" }, status: :not_found
+        end
+        
         list_item.destroy
         render json: { message: "Item removed from list" }, status: :ok
     end
 
     private
     def set_list
+        list_id = params[:custom_list_id] || params[:default_list_id]
+        
         if params[:type] == "CustomList"
-            @list = CustomList.find(params[:custom_list_id])
+            @list = CustomList.find_by(id: list_id)
         elsif params[:type] == "DefaultList"
-            @list = DefaultList.find(params[:custom_list_id])
+            @list = DefaultList.find_by(id: list_id)
+        end
+
+        unless @list
+            return render json: { error: "List not found" }, status: :not_found
         end
     end
 
