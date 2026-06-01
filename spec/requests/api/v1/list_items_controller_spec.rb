@@ -108,6 +108,22 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
           parsed_response = JSON.parse(response.body)
           expect(parsed_response.length).to eq(1)
         end
+
+        it "logs when TMDB data is missing (Bug #3: No Handling for Nil TMDB Data)" do
+          tmdb_response = [
+            { id: 550, title: "Fight Club" },
+            nil
+          ]
+          allow(tmdb_service).to receive(:fetch_batch).and_return(tmdb_response)
+          allow(Rails.logger).to receive(:warn)
+
+          get "/api/v1/custom_list/#{custom_list.id}/list_items", headers: headers
+
+          # Verify logger was called with warning about missing TMDB data
+          expect(Rails.logger).to have_received(:warn).with(
+            a_string_matching(/TMDB data missing for 1 of 2 list items/)
+          )
+        end
       end
 
       context "when list does not exist" do
@@ -353,18 +369,36 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       end
     end
 
-    describe "Invalid list type parameter" do
-      it "validates type parameter and rejects invalid types with 400 Bad Request" do
-        # Bug fix: set_list now validates that type is either CustomList or DefaultList
-        # If invalid, returns 400 Bad Request instead of 404 Not Found
-        # In normal usage, Rails routes always provide valid type
-        # This defensive validation protects against misconfiguration
+    describe "Clear route parameter naming (Bug #2)" do
+      it "correctly extracts parameter based on type for CustomList" do
+        # Bug #2 fix: set_list now extracts list_id based on type
+        # For CustomList routes: uses params[:custom_list_id]
+        # For DefaultList routes: uses params[:default_list_id]
+        # This is clearer than using || operator
         custom_list = FactoryBot.create(:custom_list, user_id: user.id)
-        params = { list_item: { item_id: 550, item_type: "Movie" } }
+        list_item = FactoryBot.create(:list_item, list_id: custom_list.id)
 
-        # Valid types work correctly
-        post "/api/v1/custom_list/#{custom_list.id}/list_items", params: params.to_json, headers: headers
-        expect(response).to have_http_status(:created)
+        allow(tmdb_service).to receive(:fetch_batch).and_return([{ id: list_item.item_id }])
+
+        # CustomList route uses custom_list_id parameter
+        get "/api/v1/custom_list/#{custom_list.id}/list_items", headers: headers
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).not_to be_empty
+      end
+
+      it "correctly extracts parameter based on type for DefaultList" do
+        # For DefaultList routes: correctly uses params[:default_list_id]
+        default_list = user.lists.where(type: "DefaultList").first
+        list_item = FactoryBot.create(:list_item, list_id: default_list.id)
+
+        allow(tmdb_service).to receive(:fetch_batch).and_return([{ id: list_item.item_id }])
+
+        # DefaultList route uses default_list_id parameter
+        get "/api/v1/default_list/#{default_list.id}/list_items", headers: headers
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).not_to be_empty
       end
     end
   end
