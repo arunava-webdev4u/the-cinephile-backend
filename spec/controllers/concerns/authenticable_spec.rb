@@ -61,8 +61,8 @@ RSpec.describe Authenticable, type: :controller  do
                 request.headers["Authorization"] = "Bearer #{token}"
                 get :index
 
-                expect(response).to have_http_status(:unauthorized)
-                expect(JSON.parse(response.body)["error"]).to eq("Invalid or expired token")
+                expect(response).to have_http_status(:not_found)
+                expect(JSON.parse(response.body)["error"]).to eq("User not found")
             end
         end
 

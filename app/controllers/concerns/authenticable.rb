@@ -22,7 +22,12 @@ module Authenticable
 
         @current_user = User.find_by(id: decoded_token[:user_id])
 
-        if @current_user.nil? || @current_user.jti != decoded_token[:jti]
+        if @current_user.nil?
+            render json: { error: "User not found" }, status: :not_found
+            return
+        end
+
+        if @current_user.jti != decoded_token[:jti]
             render json: { error: "Invalid or expired token" }, status: :unauthorized
         end
     end

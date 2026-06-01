@@ -107,7 +107,7 @@ class Api::V1::SearchController < Api::V1::BaseController
         success: false,
         error: "Either query or tmdb_id parameter is not present"
       }, status: :bad_request
-      nil
+      return
     end
   end
 end
