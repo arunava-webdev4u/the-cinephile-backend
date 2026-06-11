@@ -20,6 +20,43 @@ RSpec.shared_examples "a list item belonging to any list" do |list_factory|
       expect(item).not_to be_valid
       expect(item.errors[:list]).to include("must exist")
     end
+
+    it "is invalid without a item_id" do
+      item = ListItem.new(list: list, item_id: nil, item_type: "movie")
+      expect(item).not_to be_valid
+      expect(item.errors[:item_id]).to include("can't be blank")
+    end
+
+    it "is invalid with wrong item_id is not number" do
+      item = ListItem.new(list: list, item_id: "not_a_number", item_type: "movie")
+      expect(item).not_to be_valid
+      expect(item.errors[:item_id]).to include("is not a number")
+    end
+
+    it "is invalid with item_id zero" do
+      item = ListItem.new(list: list, item_id: 0, item_type: "movie")
+      expect(item).not_to be_valid
+      expect(item.errors[:item_id]).to include("must be greater than 0")
+    end
+
+    it "is invalid with negative item_id" do
+      item = ListItem.new(list: list, item_id: -1, item_type: "movie")
+      expect(item).not_to be_valid
+      expect(item.errors[:item_id]).to include("must be greater than 0")
+    end
+
+    it "is invalid without a item_type" do
+      item = ListItem.new(list: list, item_id: 550, item_type: nil)
+      expect(item).not_to be_valid
+      expect(item.errors[:item_type]).to include("can't be blank")
+    end
+
+    it "is invalid with an unsupported item_type" do
+      item_types = [ "movie", "tv_show" ].freeze
+      item = ListItem.new(list: list, item_id: 550, item_type: "book")
+      expect(item).not_to be_valid
+      expect(item.errors[:item_type]).to include("must be one of #{item_types.join(', ')}")
+    end
   end
 
   # ── Associations ───────────────────────────────────────────────────────────
@@ -48,6 +85,21 @@ RSpec.shared_examples "a list item belonging to any list" do |list_factory|
       ListItem.create!(list: list, item_id: 1, item_type: "movie")
       ListItem.create!(list: list, item_id: 2, item_type: "movie")
       expect(list.list_items.count).to eq(2)
+    end
+
+    it "allows the same item_id in different lists" do
+      another_list = create(list_factory, user_id: user.id)
+      item1 = ListItem.create!(list: list, item_id: 550, item_type: "movie")
+      item2 = ListItem.create!(list: another_list, item_id: 550, item_type: "movie")
+      expect(item1).to be_persisted
+      expect(item2).to be_persisted
+    end
+
+    it "stores very large item_id correctly" do
+      large_id = 999_999_999
+      item = ListItem.create!(list: list, item_id: large_id, item_type: "tv_show")
+      reloaded = ListItem.find(item.id)
+      expect(reloaded.item_id).to eq(large_id)
     end
   end
 end
