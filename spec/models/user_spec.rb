@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe User, type: :model do
   include ActiveSupport::Testing::TimeHelpers
 
-  describe 'validations' do
+  describe 'User Model Validations' do
     let(:user) { create(:user) }
 
     it 'is valid with valid attributes' do
@@ -287,6 +287,19 @@ RSpec.describe User, type: :model do
         it 'strips extra whitespace' do
           user = build(:user, first_name: ' John  ', last_name: '  Doe  ')
           expect(user.full_name).to eq('John Doe')
+        end
+      end
+
+      describe "#country_name" do
+        it 'returns the correct country name' do
+          user = build(:user, country: 356) # India
+          expect(user.country_name).to eq('India')
+        end
+
+        it 'returns error for invalid country code' do
+          user = build(:user, country: 999) # Invalid code
+          expect(user).not_to be_valid
+          expect(user.errors[:country]).to include("is not a recognized country")
         end
       end
 

@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+    include Constants
     has_many :lists, dependent: :destroy
     has_one :verification, class_name: "UserVerification", dependent: :destroy
 
@@ -6,7 +7,6 @@ class User < ApplicationRecord
     before_validation :strip_whitespace
     before_create :set_jti
     after_create :create_default_lists
-
 
     validates :first_name, :last_name, :email, :date_of_birth, :country,
         presence: true
@@ -23,9 +23,8 @@ class User < ApplicationRecord
     # format: { with: URI::MailTo::EMAIL_REGEXP }
 
     validates :country,
-        numericality: { only_integer: true, greater_than: 0 }
-
-    # validates :country, format: { with: /........../, message: "........" }, inclusion: { in: COUNTRIES, message: "is not in our country list" }
+        numericality: { only_integer: true, greater_than: 0 },
+        inclusion: { in: self::VALID_COUNTRY_NUMERIC_CODES, message: "is not a recognized country" }
 
     validate :validate_date_of_birth
 
@@ -53,6 +52,10 @@ class User < ApplicationRecord
 
     def full_name
         self.first_name.strip + " " + self.last_name.strip
+    end
+
+    def country_name
+        ISO3166::Country.find_by_number(country.to_s)[1]["iso_short_name"]
     end
 
     def adult?
@@ -121,8 +124,4 @@ class User < ApplicationRecord
             errors.add(:date_of_birth, "are you kidding me? You are too old!")
         end
     end
-
-  # def verified?
-  #     verification&.verified? || false
-  # end
 end
