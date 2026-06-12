@@ -2,7 +2,7 @@ source "https://rubygems.org"
 
 gem "rails", "~> 8.0.2"
 gem "pg", "~> 1.1"
-gem "puma", "~> 6.6"
+gem "puma", "~> 8.0"
 gem "redis"
 gem "redis-client"          # modern Redis client (used by redis-rb v5+)
 gem "connection_pool"       # required for thread-safe pooling
