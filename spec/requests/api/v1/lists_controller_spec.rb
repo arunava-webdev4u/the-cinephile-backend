@@ -116,7 +116,6 @@ RSpec.describe "Api::V1::ListsController", type: :request do
           delete "/api/v1/default_list/#{default_list.id}", headers: headers
         }.not_to change(List, :count)
       end
-
     end
   end
 
@@ -131,7 +130,7 @@ RSpec.describe "Api::V1::ListsController", type: :request do
       it "returns all custom lists for the current user" do
         # Create a list for another user to ensure it's not returned
         FactoryBot.create(:custom_list, user_id: other_user.id)
-        
+
         get "/api/v1/custom_list", headers: headers
 
         expect(response).to have_http_status(:ok)
@@ -160,7 +159,7 @@ RSpec.describe "Api::V1::ListsController", type: :request do
       it "returns nil if the list belongs to another user" do
         other_list = FactoryBot.create(:custom_list, user_id: other_user.id)
         get "/api/v1/custom_list/#{other_list.id}", headers: headers
-        
+
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)).to be_nil
       end
@@ -208,7 +207,7 @@ RSpec.describe "Api::V1::ListsController", type: :request do
       it "does not allow updating another user's list" do
         other_list = FactoryBot.create(:custom_list, user_id: other_user.id)
         put "/api/v1/custom_list/#{other_list.id}", params: update_params.to_json, headers: headers
-        
+
         expect(response).to have_http_status(:not_found)
       end
 
@@ -232,7 +231,7 @@ RSpec.describe "Api::V1::ListsController", type: :request do
         expect {
           delete "/api/v1/custom_list/#{list.id}", headers: headers
         }.to change(CustomList, :count).by(-1)
-        
+
         expect(response).to have_http_status(:ok)
       end
 
@@ -241,7 +240,7 @@ RSpec.describe "Api::V1::ListsController", type: :request do
         expect {
           delete "/api/v1/custom_list/#{other_list.id}", headers: headers
         }.not_to change(CustomList, :count)
-        
+
         expect(response).to have_http_status(:not_found)
       end
 

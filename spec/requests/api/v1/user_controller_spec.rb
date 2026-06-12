@@ -39,7 +39,7 @@ RSpec.describe "Api::V1::UserController", type: :request do
 
         parsed_response = JSON.parse(response.body)
         expect(parsed_response).to include(
-          "id", "email", "first_name", "last_name", 
+          "id", "email", "first_name", "last_name",
           "date_of_birth", "country", "created_at", "updated_at"
         )
       end
@@ -234,9 +234,9 @@ RSpec.describe "Api::V1::UserController", type: :request do
         it "deletes associated custom_lists and its list items" do
           custom_list = FactoryBot.create(:custom_list, user_id: user.id)
           list_item = FactoryBot.create(:list_item, list_id: custom_list.id)
-  
+
           delete "/api/v1/user", headers: headers
-  
+
           expect(User.find_by(id: user.id)).to be_nil
           expect(List.find_by(id: custom_list.id)).to be_nil
           expect(ListItem.find_by(id: list_item.id)).to be_nil
@@ -278,9 +278,9 @@ RSpec.describe "Api::V1::UserController", type: :request do
     describe "updating other user's profile" do
       it "can only update current user's profile" do
         update_params = { user: { first_name: "Hacked" } }
-        other_user_headers = { 
-          "Authorization" => "Bearer #{auth_token}", 
-          "CONTENT_TYPE" => "application/json" 
+        other_user_headers = {
+          "Authorization" => "Bearer #{auth_token}",
+          "CONTENT_TYPE" => "application/json"
         }
         allow(Auth::JsonWebToken).to receive(:decode).and_return({ user_id: other_user.id, jti: other_user.jti })
 
@@ -288,7 +288,7 @@ RSpec.describe "Api::V1::UserController", type: :request do
 
         other_user.reload
         expect(other_user.first_name).to eq("Hacked")
-        
+
         user.reload
         expect(user.first_name).not_to eq("Hacked")
       end
@@ -299,9 +299,9 @@ RSpec.describe "Api::V1::UserController", type: :request do
         user_first_name = user.first_name
         other_user_id = other_user.id
 
-        other_user_headers = { 
-          "Authorization" => "Bearer #{auth_token}", 
-          "CONTENT_TYPE" => "application/json" 
+        other_user_headers = {
+          "Authorization" => "Bearer #{auth_token}",
+          "CONTENT_TYPE" => "application/json"
         }
         allow(Auth::JsonWebToken).to receive(:decode).and_return({ user_id: other_user.id, jti: other_user.jti })
 

@@ -263,7 +263,7 @@ RSpec.describe SendVerificationEmailWorker, type: :worker do
         described_class.perform_async(user.id)
 
         job = described_class.jobs.first
-        expect(job['args']).to eq([user.id])
+        expect(job['args']).to eq([ user.id ])
       end
 
       it 'enqueues multiple jobs for multiple users' do
@@ -273,8 +273,8 @@ RSpec.describe SendVerificationEmailWorker, type: :worker do
         described_class.perform_async(user2.id)
 
         expect(described_class.jobs.size).to eq(2)
-        expect(described_class.jobs[0]['args']).to eq([user.id])
-        expect(described_class.jobs[1]['args']).to eq([user2.id])
+        expect(described_class.jobs[0]['args']).to eq([ user.id ])
+        expect(described_class.jobs[1]['args']).to eq([ user2.id ])
       end
 
       it 'job is placed in the mailers queue' do
@@ -432,4 +432,3 @@ RSpec.describe SendVerificationEmailWorker, type: :worker do
     end
   end
 end
-
