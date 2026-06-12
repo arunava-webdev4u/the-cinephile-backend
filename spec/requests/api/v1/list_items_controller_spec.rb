@@ -155,7 +155,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
 
           parsed_response = JSON.parse(response.body)
           expect(parsed_response["item_id"]).to eq(550)
-          expect(parsed_response["item_type"]).to eq("Movie")
+          expect(parsed_response["item_type"]).to eq("movie")
           expect(parsed_response["list_id"]).to eq(custom_list.id)
         end
       end
@@ -291,7 +291,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
 
           parsed_response = JSON.parse(response.body)
           expect(parsed_response["item_id"]).to eq(550)
-          expect(parsed_response["item_type"]).to eq("Movie")
+          expect(parsed_response["item_type"]).to eq("movie")
           expect(parsed_response["list_id"]).to eq(default_list.id)
         end
       end

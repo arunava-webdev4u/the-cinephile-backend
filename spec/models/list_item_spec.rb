@@ -57,6 +57,123 @@ RSpec.shared_examples "a list item belonging to any list" do |list_factory|
       expect(item).not_to be_valid
       expect(item.errors[:item_type]).to include("must be one of #{item_types.join(', ')}")
     end
+
+    describe "#item_type_selection validation" do
+      it "accepts 'movie' as a valid item_type" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "movie")
+        expect(item).to be_valid
+        expect(item.errors[:item_type]).to be_empty
+      end
+
+      it "accepts 'tv_show' as a valid item_type" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "tv_show")
+        expect(item).to be_valid
+        expect(item.errors[:item_type]).to be_empty
+      end
+
+      it "rejects 'book' as an invalid item_type" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "book")
+        expect(item).not_to be_valid
+        expect(item.errors[:item_type]).to include("must be one of movie, tv_show")
+      end
+
+      it "rejects 'show' as an invalid item_type" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "show")
+        expect(item).not_to be_valid
+        expect(item.errors[:item_type]).to include("must be one of movie, tv_show")
+      end
+
+      it "rejects 'music' as an invalid item_type" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "music")
+        expect(item).not_to be_valid
+        expect(item.errors[:item_type]).to include("must be one of movie, tv_show")
+      end
+
+      it "rejects empty string as an invalid item_type" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "")
+        expect(item).not_to be_valid
+        expect(item.errors[:item_type]).to include("can't be blank")
+      end
+
+      it "provides a helpful error message with valid options" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "invalid")
+        item.valid?
+        error_message = item.errors[:item_type].first
+        expect(error_message).to include("movie")
+        expect(error_message).to include("tv_show")
+      end
+    end
+  end
+
+  # ── Callbacks ──────────────────────────────────────────────────────────────
+  describe "callbacks" do
+    describe "#downcase_item_type before_validation" do
+      it "converts 'MOVIE' to lowercase 'movie'" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "MOVIE")
+        item.valid?
+        expect(item.item_type).to eq("movie")
+      end
+
+      it "converts 'TV_SHOW' to lowercase 'tv_show'" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "TV_SHOW")
+        item.valid?
+        expect(item.item_type).to eq("tv_show")
+      end
+
+      it "converts 'Movie' (mixed case) to lowercase 'movie'" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "Movie")
+        item.valid?
+        expect(item.item_type).to eq("movie")
+      end
+
+      it "converts 'Tv_Show' (mixed case) to lowercase 'tv_show'" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "Tv_Show")
+        item.valid?
+        expect(item.item_type).to eq("tv_show")
+      end
+
+      it "keeps already lowercase 'movie' unchanged" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "movie")
+        item.valid?
+        expect(item.item_type).to eq("movie")
+      end
+
+      it "keeps already lowercase 'tv_show' unchanged" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "tv_show")
+        item.valid?
+        expect(item.item_type).to eq("tv_show")
+      end
+
+      it "converts case before validation, allowing validation to pass" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "MOVIE")
+        expect(item).to be_valid
+        expect(item.item_type).to eq("movie")
+      end
+
+      it "converts case before validation for tv_show" do
+        item = ListItem.new(list: list, item_id: 550, item_type: "TV_SHOW")
+        expect(item).to be_valid
+        expect(item.item_type).to eq("tv_show")
+      end
+
+      it "handles nil item_type gracefully without error" do
+        item = ListItem.new(list: list, item_id: 550, item_type: nil)
+        expect { item.valid? }.not_to raise_error
+        expect(item.item_type).to be_nil
+      end
+
+      it "persists the downcased item_type to the database" do
+        item = ListItem.create!(list: list, item_id: 550, item_type: "MOVIE")
+        reloaded = ListItem.find(item.id)
+        expect(reloaded.item_type).to eq("movie")
+      end
+
+      it "persists downcased tv_show to the database" do
+        item = ListItem.create!(list: list, item_id: 550, item_type: "TV_SHOW")
+        reloaded = ListItem.find(item.id)
+        expect(reloaded.item_type).to eq("tv_show")
+      end
+    end
   end
 
   # ── Associations ───────────────────────────────────────────────────────────
