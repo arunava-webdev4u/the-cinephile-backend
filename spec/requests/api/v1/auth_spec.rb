@@ -77,12 +77,12 @@ RSpec.describe "Api::V1::AuthController", type: :request do
     describe "POST /api/v1/auth/register" do
         register_params = {
             user: {
-                email: "johndoe@gmail.com",
+                email: "johndoe+#{SecureRandom.hex(4)}@gmail.com",
                 password: "1111",
                 confirm_password: "1111",
                 first_name: "john",
                 last_name: "doe",
-                country: 7,
+                country: 356,
                 date_of_birth: "2000-12-20"
             }
         }
@@ -197,7 +197,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                     confirm_password: "1111",
                     first_name: "ben",
                     last_name: "ten",
-                    country: 7,
+                    country: 248,
                     date_of_birth: "2000-12-20"
                 }
             }

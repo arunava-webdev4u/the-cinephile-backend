@@ -94,7 +94,7 @@ RSpec.describe "Api::V1::UserController", type: :request do
           first_name: "Updated",
           last_name: "Name",
           date_of_birth: "1995-05-15",
-          country: 1
+          country: 660
         }
       }
     end
@@ -155,11 +155,11 @@ RSpec.describe "Api::V1::UserController", type: :request do
       end
 
       it "allows updating country" do
-        country_params = { user: { country: 42 } }
+        country_params = { user: { country: 76 } }
         put "/api/v1/user", params: country_params.to_json, headers: headers
 
         user.reload
-        expect(user.country).to eq(42)
+        expect(user.country).to eq(76)
       end
     end
 

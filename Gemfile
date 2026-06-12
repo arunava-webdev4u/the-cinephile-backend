@@ -7,6 +7,7 @@ gem "redis"
 gem "redis-client"          # modern Redis client (used by redis-rb v5+)
 gem "connection_pool"       # required for thread-safe pooling
 gem "faraday", "~> 2.7"
+gem 'countries', '~> 8.1'
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # gem "jbuilder"
 
