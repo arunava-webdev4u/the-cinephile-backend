@@ -2,7 +2,7 @@ module Constants
     extend ActiveSupport::Concern
 
     included do
-        # Add any instance methods or callbacks here if needed
+      # Add any instance methods or callbacks here if needed
     end
 
     class_methods do

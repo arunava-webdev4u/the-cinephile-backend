@@ -178,7 +178,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       context "when list does not exist" do
         it "raises an error" do
           post "/api/v1/custom_list/99999/list_items", params: valid_params.to_json, headers: headers
-          
+
           expect(response).to have_http_status(:not_found)
           parsed_response = JSON.parse(response.body)
           expect(parsed_response).to include("error")
@@ -326,7 +326,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
     describe "Authorization concerns" do
       it "allows current user to access their own list items" do
         FactoryBot.create(:list_item, list_id: custom_list.id, item_id: 550, item_type: "Movie")
-        allow(tmdb_service).to receive(:fetch_batch).and_return([{ id: 550, title: "Fight Club" }])
+        allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: 550, title: "Fight Club" } ])
 
         get "/api/v1/custom_list/#{custom_list.id}/list_items", headers: headers
 
@@ -336,7 +336,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       # # BUG: This test will expose that there's NO authorization check on accessing another user's list
       it "currently allows accessing another user's list items (BUG - should be prevented)" do
         FactoryBot.create(:list_item, list_id: other_user_list.id, item_id: 550, item_type: "Movie")
-        allow(tmdb_service).to receive(:fetch_batch).and_return([{ id: 550, title: "Fight Club" }])
+        allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: 550, title: "Fight Club" } ])
 
         get "/api/v1/custom_list/#{other_user_list.id}/list_items", headers: headers
 
@@ -378,7 +378,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         custom_list = FactoryBot.create(:custom_list, user_id: user.id)
         list_item = FactoryBot.create(:list_item, list_id: custom_list.id)
 
-        allow(tmdb_service).to receive(:fetch_batch).and_return([{ id: list_item.item_id }])
+        allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: list_item.item_id } ])
 
         # CustomList route uses custom_list_id parameter
         get "/api/v1/custom_list/#{custom_list.id}/list_items", headers: headers
@@ -392,7 +392,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         default_list = user.lists.where(type: "DefaultList").first
         list_item = FactoryBot.create(:list_item, list_id: default_list.id)
 
-        allow(tmdb_service).to receive(:fetch_batch).and_return([{ id: list_item.item_id }])
+        allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: list_item.item_id } ])
 
         # DefaultList route uses default_list_id parameter
         get "/api/v1/default_list/#{default_list.id}/list_items", headers: headers

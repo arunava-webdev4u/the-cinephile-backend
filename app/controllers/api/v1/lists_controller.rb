@@ -37,7 +37,7 @@ class Api::V1::ListsController < Api::V1::ApplicationController
 
     def destroy
         @list = CustomList.find_by(id: params[:id], user_id: @current_user.id)
-        
+
         unless @list
             return render json: { error: "List not found" }, status: :not_found
         end

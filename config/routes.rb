@@ -20,6 +20,8 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      get "/metadata/countries", to: "metadata#countries"
+
       namespace :auth do
         post :register
         post :verify_email
@@ -45,12 +47,10 @@ Rails.application.routes.draw do
         resources :list_items, only: [ :index, :create, :destroy ]
       end
 
-      resources :custom_list, controller: :lists, type: "CustomList", except: [:update] do
+      resources :custom_list, controller: :lists, type: "CustomList", except: [ :update ] do
         put :update, on: :member
         resources :list_items, only: [ :index, :create, :destroy ]
       end
     end
   end
 end
-
-# get '/metadata/countries',
