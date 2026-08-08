@@ -370,37 +370,30 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       end
     end
 
-    # describe "Clear route parameter naming (Bug #2)" do
-    #   it "correctly extracts parameter based on type for CustomList" do
-    #     # Bug #2 fix: set_list now extracts list_id based on type
-    #     # For CustomList routes: uses params[:custom_list_id]
-    #     # For DefaultList routes: uses params[:default_list_id]
-    #     # This is clearer than using || operator
-    #     custom_list = FactoryBot.create(:custom_list, user_id: user.id)
-    #     list_item = FactoryBot.create(:list_item, list_id: custom_list.id)
+    describe "Clear route parameter naming (Bug #2)" do
+      it "correctly extracts parameter based on type for CustomList" do
+        custom_list = FactoryBot.create(:custom_list, user_id: user.id)
+        list_item = FactoryBot.create(:list_item, list_id: custom_list.id)
 
-    #     allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: list_item.item_id } ])
+        allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: list_item.item_id } ])
 
-    #     # CustomList route uses custom_list_id parameter
-    #     get "/api/v1/custom_list/#{custom_list.id}/list_items", headers: headers
+        get "/api/v1/custom_list/#{custom_list.id}/list_items", headers: headers
 
-    #     expect(response).to have_http_status(:ok)
-    #     expect(JSON.parse(response.body)).not_to be_empty
-    #   end
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).not_to be_empty
+      end
 
-    #   it "correctly extracts parameter based on type for DefaultList" do
-    #     # For DefaultList routes: correctly uses params[:default_list_id]
-    #     default_list = user.lists.where(type: "DefaultList").first
-    #     list_item = FactoryBot.create(:list_item, list_id: default_list.id)
+      it "correctly extracts parameter based on type for DefaultList" do
+        default_list = user.lists.where(type: "DefaultList").first
+        list_item = FactoryBot.create(:list_item, list_id: default_list.id)
 
-    #     allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: list_item.item_id } ])
+        allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: list_item.item_id } ])
 
-    #     # DefaultList route uses default_list_id parameter
-    #     get "/api/v1/default_list/#{default_list.id}/list_items", headers: headers
+        get "/api/v1/default_list/#{default_list.id}/list_items", headers: headers
 
-    #     expect(response).to have_http_status(:ok)
-    #     expect(JSON.parse(response.body)).not_to be_empty
-    #   end
-    # end
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).not_to be_empty
+      end
+    end
   end
 end

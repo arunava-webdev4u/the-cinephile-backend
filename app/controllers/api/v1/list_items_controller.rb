@@ -2,7 +2,6 @@ class Api::V1::ListItemsController < Api::V1::ApplicationController
     before_action :set_list
 
     def index
-        # ###############
         list = @current_user.lists.find(@list.id)
         return render json: { error: "List not found" }, status: :not_found if list.nil?
 
