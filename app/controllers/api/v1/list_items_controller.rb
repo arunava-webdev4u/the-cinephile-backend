@@ -2,7 +2,11 @@ class Api::V1::ListItemsController < Api::V1::ApplicationController
     before_action :set_list
 
     def index
-        list_items = @list.list_items
+        # ###############
+        list = @current_user.lists.find(@list.id)
+        return render json: { error: "List not found" }, status: :not_found if list.nil?
+
+        list_items = list.list_items
         tmdb_data = TmdbService.new.fetch_batch(list_items)
 
         # Track items with missing TMDB data for logging
@@ -63,12 +67,8 @@ class Api::V1::ListItemsController < Api::V1::ApplicationController
         # Routes provide custom_list_id or default_list_id param based on resource
         list_id = params[:type] == "CustomList" ? params[:custom_list_id] : params[:default_list_id]
 
-        # Find the list by type and ID
-        @list = if params[:type] == "CustomList"
-                  CustomList.find_by(id: list_id)
-        else
-                  DefaultList.find_by(id: list_id)
-        end
+        # Find the list by type and ID, scoped to current user for authorization
+        @list = @current_user.lists.where(type: params[:type]).find_by(id: list_id)
 
         unless @list
             render json: { error: "List not found" }, status: :not_found
