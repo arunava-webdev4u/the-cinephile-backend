@@ -323,7 +323,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
     let(:custom_list) { FactoryBot.create(:custom_list, user_id: user.id) }
     let(:other_user_list) { FactoryBot.create(:custom_list, user_id: other_user.id) }
 
-    describe "Authorization concerns" do
+    describe "Authorization" do
       it "allows current user to access their own list items" do
         FactoryBot.create(:list_item, list_id: custom_list.id, item_id: 550, item_type: "Movie")
         allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: 550, title: "Fight Club" } ])
@@ -333,54 +333,50 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         expect(response).to have_http_status(:ok)
       end
 
-      # # BUG: This test will expose that there's NO authorization check on accessing another user's list
-      it "currently allows accessing another user's list items (BUG - should be prevented)" do
+      it "does not allow accessing another user's list items" do
         FactoryBot.create(:list_item, list_id: other_user_list.id, item_id: 550, item_type: "Movie")
         allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: 550, title: "Fight Club" } ])
 
         get "/api/v1/custom_list/#{other_user_list.id}/list_items", headers: headers
+        # ###############
 
-        # This should probably be 404 or 403, but currently returns 200
-        expect(response).to have_http_status(:ok)
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)).to include("error")
+        expect(JSON.parse(response.body)["error"]).to eq("List not found")
       end
 
-      # # BUG: This test will expose that there's NO authorization check on creating list items in another user's list
-      it "currently allows creating list items in another user's list (BUG - should be prevented)" do
+      it "does not allow creating list items in another user's list" do
         params = { list_item: { item_id: 550, item_type: "Movie" } }
 
         expect {
           post "/api/v1/custom_list/#{other_user_list.id}/list_items", params: params.to_json, headers: headers
-        }.to change(ListItem, :count).by(1)
+        }.not_to change(ListItem, :count)
 
-        # This should probably be 404 or 403, but currently returns 201
-        expect(response).to have_http_status(:created)
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)).to include("error")
+        expect(JSON.parse(response.body)["error"]).to eq("List not found")
       end
 
-      # # BUG: This test will expose that there's NO authorization check on deleting another user's list items
-      it "currently allows deleting another user's list items (BUG - should be prevented)" do
+      it "does not allow deleting another user's list items" do
         list_item = FactoryBot.create(:list_item, list_id: other_user_list.id)
 
         expect {
           delete "/api/v1/custom_list/#{other_user_list.id}/list_items/#{list_item.id}", headers: headers
-        }.to change(ListItem, :count).by(-1)
+        }.not_to change(ListItem, :count)
 
-        # This should probably be 404 or 403, but currently returns 200
-        expect(response).to have_http_status(:ok)
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)).to include("error")
+        expect(JSON.parse(response.body)["error"]).to eq("List not found")
       end
     end
 
     describe "Clear route parameter naming (Bug #2)" do
       it "correctly extracts parameter based on type for CustomList" do
-        # Bug #2 fix: set_list now extracts list_id based on type
-        # For CustomList routes: uses params[:custom_list_id]
-        # For DefaultList routes: uses params[:default_list_id]
-        # This is clearer than using || operator
         custom_list = FactoryBot.create(:custom_list, user_id: user.id)
         list_item = FactoryBot.create(:list_item, list_id: custom_list.id)
 
         allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: list_item.item_id } ])
 
-        # CustomList route uses custom_list_id parameter
         get "/api/v1/custom_list/#{custom_list.id}/list_items", headers: headers
 
         expect(response).to have_http_status(:ok)
@@ -388,13 +384,11 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       end
 
       it "correctly extracts parameter based on type for DefaultList" do
-        # For DefaultList routes: correctly uses params[:default_list_id]
         default_list = user.lists.where(type: "DefaultList").first
         list_item = FactoryBot.create(:list_item, list_id: default_list.id)
 
         allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: list_item.item_id } ])
 
-        # DefaultList route uses default_list_id parameter
         get "/api/v1/default_list/#{default_list.id}/list_items", headers: headers
 
         expect(response).to have_http_status(:ok)

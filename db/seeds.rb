@@ -12,6 +12,18 @@ end
 User.destroy_all
 puts "Destroyed all existing users."
 
+# Delete old dev_creds.local.md file if it exists (skip if not present)
+local_file_path = Rails.root.join('dev_creds.local.md')
+begin
+  File.delete(local_file_path) if File.exist?(local_file_path)
+  puts "Deleted old dev_creds.local.md file."
+rescue => e
+  puts "Warning: Could not delete old .local.md file: #{e.message}"
+end
+
+# Initialize credentials data
+credentials_data = []
+
 # Valid country codes from the ISO3166::Country gem, which is used in the User model
 valid_country_codes = ISO3166::Country.all.map { |c| c.number.to_i }.compact.map(&:to_i)
 
@@ -28,6 +40,13 @@ valid_country_codes = ISO3166::Country.all.map { |c| c.number.to_i }.compact.map
   )
   puts "Created User: #{(i + 1).to_s.rjust(2, '0')} - #{user.email}"
 
+  # Store credentials for .local.md file
+  credentials_data << {
+    name: "#{user.first_name} #{user.last_name}",
+    email: user.email,
+    password: password
+  }
+
   # Create a random number of custom lists for each user (3-6)
   rand(3..6).times do |j|
     user.lists.create!(
@@ -43,7 +62,7 @@ valid_country_codes = ISO3166::Country.all.map { |c| c.number.to_i }.compact.map
     rand(5..15).times do |k|
       list.list_items.create!(
         item_id: Faker::Number.unique.between(from: 1, to: 100000),
-        item_type: ["movie", "tv_show"].sample
+        item_type: [ "movie", "tv_show" ].sample
       )
       puts "    Created ListItem: #{(k + 1).to_s.rjust(2, '0')} for " + list.name + " (\#{list.type})"
     end
@@ -51,3 +70,24 @@ valid_country_codes = ISO3166::Country.all.map { |c| c.number.to_i }.compact.map
 end
 
 puts "Seed data created successfully!"
+
+# Write credentials to .local.md file
+begin
+  markdown_content = "# Test User Credentials\n\n"
+  markdown_content += "Generated at: #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+  markdown_content += "| Name | Email | Password |\n"
+  markdown_content += "|------|-------|----------|\n"
+
+  credentials_data.each do |cred|
+    markdown_content += "| #{cred[:name]} | #{cred[:email]} | `#{cred[:password]}` |\n"
+  end
+
+  markdown_content += "\n---\n\n"
+  markdown_content += "**Note:** This file is generated automatically by `bin/rails db:seed` and should NOT be committed to git.\n"
+  markdown_content += "It contains test credentials for development purposes only.\n"
+
+  File.write(local_file_path, markdown_content)
+  puts "\n✓ Credentials saved to dev_creds.local.md"
+rescue => e
+  puts "\n✗ Error writing credentials to dev_creds.local.md: #{e.message}"
+end
