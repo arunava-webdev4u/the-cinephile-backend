@@ -18,12 +18,18 @@ class TmdbService
   end
 
   # Search movie/tv
-  def search_by_name(query, type)
-    tmdb_request("search/#{type}?query=#{query}")
+  def multi_search(query)
+    return tmdb_request("search/multi?query=#{query}") if query.length < 3
+
+    cached(Cache::Keys.tmdb_multi_search(query), ttl: Cache::Ttl::TMDB_SEARCH) do
+      tmdb_request("search/multi?query=#{query}")
+    end
   end
 
-  def multi_search(query)
-    tmdb_request("search/multi?query=#{query}")
+  def search_by_name(query, type)
+    cached(Cache::Keys.tmdb_search(type, query), ttl: Cache::Ttl::TMDB_SEARCH) do
+      tmdb_request("search/#{type}?query=#{query}")
+    end
   end
 
   def search_by_id(id, type)

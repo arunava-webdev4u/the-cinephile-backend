@@ -8,6 +8,10 @@ module Cache
       "tmdb:search:#{type}:#{query.downcase.strip}"
     end
 
+    def self.tmdb_multi_search(query)
+      "tmdb:search:multi:#{query.downcase.strip}"
+    end
+
     def self.tmdb_trending(type, window = "day")
       "tmdb:trending:#{type}:#{window}"
     end
