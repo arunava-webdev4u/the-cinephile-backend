@@ -1,6 +1,6 @@
 class TmdbService
+  include Cache::Cacheable
   require "net/http"
-  DEFAULT_TTL = 1.week
 
   BASE_URL_V3 = "https://api.themoviedb.org/3"
   VALID_SEARCH_TYPES = %w[movie tv person].freeze
@@ -27,9 +27,7 @@ class TmdbService
   end
 
   def search_by_id(id, type)
-    cache_key = "tmdb/#{type}/#{id}"
-
-    Rails.cache.fetch(cache_key, expires_in: DEFAULT_TTL) do
+    cached(Cache::Keys.tmdb_entity(type, id), ttl: Cache::Ttl::TMDB_ENTITY) do
       tmdb_request("#{type}/#{id}")
     end
   end
