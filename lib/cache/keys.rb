@@ -16,6 +16,10 @@ module Cache
       "tmdb:trending:#{type}:#{time_window}"
     end
 
+    def self.tmdb_popular(type)
+      "tmdb:popular:#{type}"
+    end
+
     def self.user_profile(user_id)
       "user:#{user_id}:profile"
     end

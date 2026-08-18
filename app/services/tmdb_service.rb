@@ -71,6 +71,24 @@ class TmdbService
     end
   end
 
+  def popular(type)
+    allowed_types = %w[movie person tv]
+
+    if type.blank?
+      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    type = type.to_s.downcase
+
+    unless allowed_types.include?(type)
+      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    cached(Cache::Keys.tmdb_popular(type), ttl: Cache::Ttl::TMDB_POPULAR) do
+      tmdb_request("#{type}/popular")
+    end
+  end
+
   def discover(type)
     # tmdb_request("discover/#{type}")
   end

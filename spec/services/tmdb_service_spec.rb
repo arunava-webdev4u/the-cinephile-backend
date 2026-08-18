@@ -96,6 +96,39 @@ RSpec.describe TmdbService, type: :service do
             end
     end
 
+    describe "#popular" do
+        let(:expected_response) { { 'results' => [ { 'id' => 201, 'title' => 'Popular Movie' } ] } }
+        let!(:service) { described_class.new }
+
+        before do
+            allow(Cache::Store).to receive(:fetch).and_yield.and_return(expected_response)
+            allow(service).to receive(:tmdb_request).and_return(expected_response)
+        end
+
+        it 'calls tmdb_request with the correct popular path' do
+            service.popular('movie')
+            expect(service).to have_received(:tmdb_request).with('movie/popular')
+        end
+
+        it 'returns the API response' do
+            response = service.popular('movie')
+            expect(response).to eq(expected_response)
+        end
+
+        it 'raises ArgumentError when no type is passed' do
+            expect { service.popular(nil) }
+                .to raise_error(ArgumentError, /Type is required/)
+
+            expect { service.popular('') }
+                .to raise_error(ArgumentError, /Type is required/)
+        end
+
+        it 'raises ArgumentError for invalid type' do
+            expect { service.popular('invalid_type') }
+                .to raise_error(ArgumentError, /Invalid type/)
+        end
+    end
+
     describe "#tmdb_request" do
         BASE_URL_V3 = "https://api.themoviedb.org/3"
         url = URI("#{BASE_URL_V3}/resource_path")

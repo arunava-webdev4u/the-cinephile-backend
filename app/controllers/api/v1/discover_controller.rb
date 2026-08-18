@@ -2,7 +2,7 @@ class Api::V1::DiscoverController < Api::V1::BaseController
   before_action :initialize_tmdb_service
 
   rescue_from TmdbService::TmdbError, with: :handle_tmdb_error
-  rescue_from ArgumentError, with: :handle_invalid_trending_params
+  rescue_from ArgumentError, with: :handle_invalid_params
 
   def trending
     result = @tmdb_service.trending(discover_params[:type], discover_params[:time_window])
@@ -14,15 +14,15 @@ class Api::V1::DiscoverController < Api::V1::BaseController
     end
   end
 
-  #   def popular
-  #     result = @tmdb_service.lists("movie", "popular")
+  def popular
+    result = @tmdb_service.popular(discover_params[:type])
 
-  #     if result.present?
-  #       render json: result, status: :ok
-  #     else
-  #       render json: { error: "No popular movies found" }, status: :not_found
-  #     end
-  #   end
+    if result.present?
+      render json: result, status: :ok
+    else
+      render json: { error: "No popular movies found" }, status: :not_found
+    end
+  end
 
   #   def top_rated
   #     result = @tmdb_service.lists("movie", "top_rated")
@@ -68,7 +68,7 @@ class Api::V1::DiscoverController < Api::V1::BaseController
            status: :service_unavailable
   end
 
-  def handle_invalid_trending_params(exception)
+  def handle_invalid_params(exception)
     render json: {
       error: exception.message,
       valid_types: %w[all movie person tv],
