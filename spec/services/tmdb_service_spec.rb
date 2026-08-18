@@ -29,9 +29,24 @@ RSpec.describe TmdbService, type: :service do
             allow(service).to receive(:tmdb_request).and_return(expected_response)
         end
 
+        it 'uses the default type and time window when no params are passed' do
+            service.trending
+            expect(service).to have_received(:tmdb_request).with('trending/all/week')
+        end
+
+        it 'uses defaults when nil is passed explicitly' do
+            service.trending(nil, nil)
+            expect(service).to have_received(:tmdb_request).with('trending/all/week')
+        end
+
         it 'calls tmdb_request with correct trending path' do
             service.trending('movie', 'week')
             expect(service).to have_received(:tmdb_request).with('trending/movie/week')
+        end
+
+        it 'accepts custom type and time_window params' do
+            service.trending('tv', 'day')
+            expect(service).to have_received(:tmdb_request).with('trending/tv/day')
         end
 
         it 'returns the API response' do

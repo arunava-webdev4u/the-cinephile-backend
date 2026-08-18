@@ -18,28 +18,50 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
 
     context "when TMDB returns results" do
       before do
-        allow(tmdb_service).to receive(:trending).with("movie", "week").and_return(success_response)
+        allow(tmdb_service).to receive(:trending).with(nil, nil).and_return(success_response)
       end
 
-      it "calls TmdbService.trending and returns results" do
+      it "passes nil params through so the service can apply its default values" do
         get "/api/v1/discover/trending", headers: headers
 
-        expect(tmdb_service).to have_received(:trending).with("movie", "week")
+        expect(tmdb_service).to have_received(:trending).with(nil, nil)
         expect(response).to have_http_status(:ok)
         expect(response.body).to eq(success_response.to_json)
+      end
+
+      it "passes custom type and time_window params to the service" do
+        allow(tmdb_service).to receive(:trending).with("movie", "day").and_return(success_response)
+
+        get "/api/v1/discover/trending?type=movie&time_window=day", headers: headers
+
+        expect(tmdb_service).to have_received(:trending).with("movie", "day")
+        expect(response).to have_http_status(:ok)
       end
     end
 
     context "when TMDB returns no results" do
       before do
-        allow(tmdb_service).to receive(:trending).with("movie", "week").and_return([])
+        allow(tmdb_service).to receive(:trending).with(nil, nil).and_return([])
       end
 
       it "returns not_found with an error message" do
         get "/api/v1/discover/trending", headers: headers
 
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)["error"]).to eq("No trending movies found")
+        expect(JSON.parse(response.body)["error"]).to eq("No trending items found")
+      end
+    end
+
+    context "when invalid params are sent" do
+      before do
+        allow(tmdb_service).to receive(:trending).with("invalid_type", "week").and_raise(ArgumentError, "Invalid type or time_window. Valid types: all, movie, person, tv. Valid time_windows: day, week")
+      end
+
+      it "returns bad_request with the validation error" do
+        get "/api/v1/discover/trending?type=invalid_type&time_window=week", headers: headers
+
+        expect(response).to have_http_status(:bad_request)
+        expect(JSON.parse(response.body)["error"]).to include("Invalid type or time_window")
       end
     end
 

@@ -1,60 +1,63 @@
 class Api::V1::DiscoverController < Api::V1::BaseController
   before_action :initialize_tmdb_service
-  before_action :force_json_request
 
   rescue_from TmdbService::TmdbError, with: :handle_tmdb_error
+  rescue_from ArgumentError, with: :handle_invalid_trending_params
 
   def trending
-    result = @tmdb_service.trending("movie", "week")
+    result = @tmdb_service.trending(discover_params[:type], discover_params[:time_window])
 
     if result.present?
       render json: result, status: :ok
     else
-      render json: { error: "No trending movies found" }, status: :not_found
+      render json: { error: "No trending items found" }, status: :not_found
     end
   end
 
-#   def popular
-#     result = @tmdb_service.lists("movie", "popular")
+  #   def popular
+  #     result = @tmdb_service.lists("movie", "popular")
 
-#     if result.present?
-#       render json: result, status: :ok
-#     else
-#       render json: { error: "No popular movies found" }, status: :not_found
-#     end
-#   end
+  #     if result.present?
+  #       render json: result, status: :ok
+  #     else
+  #       render json: { error: "No popular movies found" }, status: :not_found
+  #     end
+  #   end
 
-#   def top_rated
-#     result = @tmdb_service.lists("movie", "top_rated")
+  #   def top_rated
+  #     result = @tmdb_service.lists("movie", "top_rated")
 
-#     if result.present?
-#       render json: result, status: :ok
-#     else
-#       render json: { error: "No top_rated movies found" }, status: :not_found
-#     end
-#   end
+  #     if result.present?
+  #       render json: result, status: :ok
+  #     else
+  #       render json: { error: "No top_rated movies found" }, status: :not_found
+  #     end
+  #   end
 
-#   def upcoming
-#     result = @tmdb_service.lists("movie", "upcoming")
+  #   def upcoming
+  #     result = @tmdb_service.lists("movie", "upcoming")
 
-#     if result.present?
-#       render json: result, status: :ok
-#     else
-#       render json: { error: "No upcoming movies found" }, status: :not_found
-#     end
-#   end
+  #     if result.present?
+  #       render json: result, status: :ok
+  #     else
+  #       render json: { error: "No upcoming movies found" }, status: :not_found
+  #     end
+  #   end
 
-#   def now_playing
-#     result = @tmdb_service.lists("movie", "now_playing")
+  #   def now_playing
+  #     result = @tmdb_service.lists("movie", "now_playing")
 
-#     if result.present?
-#       render json: result, status: :ok
-#     else
-#       render json: { error: "No now_playing movies found" }, status: :not_found
-#     end
-#   end
+  #     if result.present?
+  #       render json: result, status: :ok
+  #     else
+  #       render json: { error: "No now_playing movies found" }, status: :not_found
+  #     end
+  #   end
 
   private
+  def discover_params
+    params.permit(:time_window, :type, :format)
+  end
   def initialize_tmdb_service
     @tmdb_service ||= TmdbService.new
   end
@@ -65,7 +68,11 @@ class Api::V1::DiscoverController < Api::V1::BaseController
            status: :service_unavailable
   end
 
-  def force_json_request
-    request.format = :json
+  def handle_invalid_trending_params(exception)
+    render json: {
+      error: exception.message,
+      valid_types: %w[all movie person tv],
+      valid_time_windows: %w[day week]
+    }, status: :bad_request
   end
 end

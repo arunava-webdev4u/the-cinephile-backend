@@ -55,12 +55,15 @@ class TmdbService
   end
 
   # Discover tmdb
-  def trending(type, time_window = "week")
-    types = %w[movie tv person all]
-    time_windows = %w[day week]
+  def trending(type = "all", time_window = "week")
+    allowed_types = %w[all movie person tv]
+    allowed_time_windows = %w[day week]
 
-    unless types.include?(type) && time_windows.include?(time_window)
-      raise ArgumentError, "Invalid type or time_window. Valid types: #{types.join(', ')}. Valid time_windows: #{time_windows.join(', ')}"
+    type = "all" if type.blank?
+    time_window = "week" if time_window.blank?
+
+    unless allowed_types.include?(type.to_s.downcase) && allowed_time_windows.include?(time_window.to_s.downcase)
+      raise ArgumentError, "Invalid type or time_window. Valid types: #{allowed_types.join(', ')}. Valid time_windows: #{allowed_time_windows.join(', ')}"
     end
 
     cached(Cache::Keys.tmdb_trending(type, time_window), ttl: Cache::Ttl::TMDB_TRENDING) do
