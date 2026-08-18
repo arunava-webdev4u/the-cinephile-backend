@@ -54,9 +54,15 @@ class TmdbService
     threads.map(&:value)
   end
 
-  # Trendings movie/tv
-  def trending
-    "trending"
+  # Trending movie/tv
+  def trending(type, time_window = "week")
+    cached(Cache::Keys.tmdb_trending(type, time_window), ttl: Cache::Ttl::TMDB_TRENDING) do
+      tmdb_request("trending/#{type}/#{time_window}")
+    end
+    # https://api.themoviedb.org/3/trending/all/{time_window}
+    # https://api.themoviedb.org/3/trending/movie/{time_window}
+    # https://api.themoviedb.org/3/trending/person/{time_window}
+    # https://api.themoviedb.org/3/trending/tv/{time_window}
   end
 
   # Collection ()
@@ -85,14 +91,6 @@ class TmdbService
     # https://api.themoviedb.org/3/tv/on_the_air
     # https://api.themoviedb.org/3/tv/popular
     # https://api.themoviedb.org/3/tv/top_rated
-  end
-
-  # Trending movie/tv
-  def trending(type)
-    # https://api.themoviedb.org/3/trending/all/{time_window}
-    # https://api.themoviedb.org/3/trending/movie/{time_window}
-    # https://api.themoviedb.org/3/trending/person/{time_window}
-    # https://api.themoviedb.org/3/trending/tv/{time_window}
   end
 
   # Credits movie/tv

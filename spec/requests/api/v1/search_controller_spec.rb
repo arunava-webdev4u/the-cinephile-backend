@@ -288,4 +288,49 @@ RSpec.describe "Api::V1::SearchController", type: :request do
       end
     end
   end
+
+  describe "GET /api/v1/search/trending" do
+    let(:headers) { { "Authorization" => "Bearer #{auth_token}" } }
+    let(:success_response) { { "results" => [ { "id" => 10, "title" => "Trending Movie" } ] } }
+
+    context "when TMDB returns results" do
+      before do
+        allow(tmdb_service).to receive(:trending).with("movie", "week").and_return(success_response)
+      end
+
+      it "calls TmdbService.trending and returns results" do
+        get "/api/v1/search/trending", headers: headers
+
+        expect(tmdb_service).to have_received(:trending).with("movie", "week")
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to eq(success_response.to_json)
+      end
+    end
+
+    context "when TMDB returns no results" do
+      before do
+        allow(tmdb_service).to receive(:trending).with("movie", "week").and_return([])
+      end
+
+      it "returns not_found with an error message" do
+        get "/api/v1/search/trending", headers: headers
+
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)["error"]).to eq("No trending movies found")
+      end
+    end
+
+    context "when TMDB API fails" do
+      before do
+        allow(tmdb_service).to receive(:trending).and_raise(TmdbService::TmdbError, "Service unavailable")
+      end
+
+      it "returns service unavailable" do
+        get "/api/v1/search/trending", headers: headers
+
+        expect(response).to have_http_status(:service_unavailable)
+        expect(JSON.parse(response.body)).to include("error" => "External service unavailable")
+      end
+    end
+  end
 end

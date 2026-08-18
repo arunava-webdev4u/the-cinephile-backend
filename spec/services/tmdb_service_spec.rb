@@ -19,6 +19,48 @@ RSpec.describe TmdbService, type: :service do
         end
     end
 
+    describe "#trending" do
+        let(:expected_response) { { 'results' => [ { 'id' => 101, 'title' => 'Sample Movie' } ] } }
+        let!(:service) { described_class.new }
+
+        before do
+            # Ensure cached wrapper yields to tmdb_request for these examples
+            allow(Cache::Store).to receive(:fetch).and_yield.and_return(expected_response)
+            allow(service).to receive(:tmdb_request).and_return(expected_response)
+        end
+
+        it 'calls tmdb_request with correct trending path' do
+            service.trending('movie', 'week')
+            expect(service).to have_received(:tmdb_request).with('trending/movie/week')
+        end
+
+        it 'returns the API response' do
+            response = service.trending('movie', 'week')
+            expect(response).to eq(expected_response)
+        end
+
+        context 'caching behavior' do
+            it 'uses Cache::Store.fetch with correct key and ttl' do
+                allow(Cache::Store).to receive(:fetch).and_yield.and_return(expected_response)
+
+                service.trending('movie', 'week')
+
+                expect(Cache::Store).to have_received(:fetch).with(Cache::Keys.tmdb_trending('movie', 'week'), ttl: Cache::Ttl::TMDB_TRENDING)
+            end
+
+            it 'returns cached value and does not call tmdb_request when cache present' do
+                # Simulate cache hit: fetch returns value without yielding to block
+                allow(Cache::Store).to receive(:fetch).and_return(expected_response)
+                allow(service).to receive(:tmdb_request)
+
+                result = service.trending('movie', 'week')
+
+                expect(result).to eq(expected_response)
+                expect(service).not_to have_received(:tmdb_request)
+            end
+        end
+    end
+
     describe "#tmdb_request" do
         BASE_URL_V3 = "https://api.themoviedb.org/3"
         url = URI("#{BASE_URL_V3}/resource_path")

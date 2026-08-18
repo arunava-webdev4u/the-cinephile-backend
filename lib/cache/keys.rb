@@ -12,8 +12,8 @@ module Cache
       "tmdb:search:multi:#{query.downcase.strip}"
     end
 
-    def self.tmdb_trending(type, window = "day")
-      "tmdb:trending:#{type}:#{window}"
+    def self.tmdb_trending(type, time_window = "week")
+      "tmdb:trending:#{type}:#{time_window}"
     end
 
     def self.user_profile(user_id)

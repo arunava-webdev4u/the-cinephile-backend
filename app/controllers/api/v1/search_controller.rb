@@ -23,14 +23,13 @@ class Api::V1::SearchController < Api::V1::BaseController
   end
 
   def trending
-    # @trending_movies = tmdb_service.trending_movies
+    result = @tmdb_service.trending("movie", "week")
 
-    # if @trending_movies.present?
-    #   render json: @trending_movies
-    # else
-    #   render json: { error: "No trending_movies movies found" }, status: :not_found
-    # end
-    # render json: { message: "trending" }
+    if result.present?
+      render json: result, status: :ok
+    else
+      render json: { error: "No trending movies found" }, status: :not_found
+    end
   end
 
   def popular
@@ -89,7 +88,7 @@ class Api::V1::SearchController < Api::V1::BaseController
   end
 
   def search_params
-    params.permit(:query, :tmdb_id, :type)
+    params.permit(:query, :tmdb_id, :type, :format)
   end
 
   def validate_search_params
