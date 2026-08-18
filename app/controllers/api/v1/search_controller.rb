@@ -22,16 +22,6 @@ class Api::V1::SearchController < Api::V1::BaseController
     render json: result, status: :ok
   end
 
-  def trending
-    result = @tmdb_service.trending("movie", "week")
-
-    if result.present?
-      render json: result, status: :ok
-    else
-      render json: { error: "No trending movies found" }, status: :not_found
-    end
-  end
-
   def popular
     # @popular = tmdb_service.popular
 

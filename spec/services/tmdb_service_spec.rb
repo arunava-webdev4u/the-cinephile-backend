@@ -59,6 +59,26 @@ RSpec.describe TmdbService, type: :service do
                 expect(service).not_to have_received(:tmdb_request)
             end
         end
+
+            context 'error handling' do
+                it 'raises ArgumentError for invalid type' do
+                    expect { service.trending('album', 'week') }
+                        .to raise_error(ArgumentError, /Invalid type or time_window/)
+                end
+
+                it 'raises ArgumentError for invalid time_window' do
+                    expect { service.trending('movie', 'month') }
+                        .to raise_error(ArgumentError, /Invalid type or time_window/)
+                end
+
+                it 'propagates TmdbError from tmdb_request' do
+                    allow(Cache::Store).to receive(:fetch).and_yield
+                    allow(service).to receive(:tmdb_request).and_raise(TmdbService::TmdbError, "Service unavailable")
+
+                    expect { service.trending('movie', 'week') }
+                        .to raise_error(TmdbService::TmdbError, /Service unavailable/)
+                end
+            end
     end
 
     describe "#tmdb_request" do

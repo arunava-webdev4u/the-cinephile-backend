@@ -17,7 +17,7 @@ class TmdbService
     raise AuthenticationError, "TMDB API token not found" if @api_token.blank?
   end
 
-  # Search movie/tv
+  # Search tmdb
   def multi_search(query)
     return tmdb_request("search/multi?query=#{query}") if query.length < 3
 
@@ -54,31 +54,28 @@ class TmdbService
     threads.map(&:value)
   end
 
-  # Trending movie/tv
+  # Discover tmdb
   def trending(type, time_window = "week")
+    types = %w[movie tv person all]
+    time_windows = %w[day week]
+
+    unless types.include?(type) && time_windows.include?(time_window)
+      raise ArgumentError, "Invalid type or time_window. Valid types: #{types.join(', ')}. Valid time_windows: #{time_windows.join(', ')}"
+    end
+
     cached(Cache::Keys.tmdb_trending(type, time_window), ttl: Cache::Ttl::TMDB_TRENDING) do
       tmdb_request("trending/#{type}/#{time_window}")
     end
-    # https://api.themoviedb.org/3/trending/all/{time_window}
-    # https://api.themoviedb.org/3/trending/movie/{time_window}
-    # https://api.themoviedb.org/3/trending/person/{time_window}
-    # https://api.themoviedb.org/3/trending/tv/{time_window}
   end
 
-  # Collection ()
-  # TV Seasons ()
-
-  # Discover movie/tv
   def discover(type)
     # tmdb_request("discover/#{type}")
   end
 
-  # Genre movie/tv
   def genre(type)
     # tmdb_request("genre/#{type}/list")
   end
 
-  # Lists movies/tv/persons
   def lists(type, topic)
     # https://api.themoviedb.org/3/movie/now_playing
     # https://api.themoviedb.org/3/movie/popular
@@ -93,37 +90,31 @@ class TmdbService
     # https://api.themoviedb.org/3/tv/top_rated
   end
 
-  # Credits movie/tv
   def credits(type, id)
     # https://developer.themoviedb.org/reference/movie-credits
     # https://developer.themoviedb.org/reference/tv-series-credits
   end
 
-  # Images movie/tv
   def images(type, id)
     # https://developer.themoviedb.org/reference/movie-images
     # https://developer.themoviedb.org/reference/tv-series-images
   end
 
-  # External ids movie/tv
   def external_ids(type, id)
     # https://developer.themoviedb.org/reference/movie-external-ids
     # https://developer.themoviedb.org/reference/tv-series-external-ids
   end
 
-  # Recommendations movie/tv
   def recommendations(type, id)
     # https://developer.themoviedb.org/reference/movie-recommendations
     # https://developer.themoviedb.org/reference/tv-series-recommendations
   end
 
-  # Watch providers movie/tv
   def watch_providers(type, id)
     # https://developer.themoviedb.org/reference/movie-watch-providers
     # https://developer.themoviedb.org/reference/tv-series-watch-providers
   end
 
-  # Videos movie/tv
   def videos(type, id)
     # https://developer.themoviedb.org/reference/movie-videos
     # https://developer.themoviedb.org/reference/tv-series-videos
