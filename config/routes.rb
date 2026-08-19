@@ -35,9 +35,14 @@ Rails.application.routes.draw do
           get :name
           get :id
           get :multi
+        end
+      end
+
+      resources :discover, only: [] do
+        collection do
           get :trending
           get :popular
-          get :top_rated
+          get :available_today
           get :upcoming
           get :now_playing
         end

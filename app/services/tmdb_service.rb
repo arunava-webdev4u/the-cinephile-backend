@@ -17,7 +17,7 @@ class TmdbService
     raise AuthenticationError, "TMDB API token not found" if @api_token.blank?
   end
 
-  # Search movie/tv
+  # Search tmdb
   def multi_search(query)
     return tmdb_request("search/multi?query=#{query}") if query.length < 3
 
@@ -54,82 +54,119 @@ class TmdbService
     threads.map(&:value)
   end
 
-  # Trendings movie/tv
-  def trending
-    "trending"
+  # Discover tmdb
+  def trending(type = "all", time_window = "week")
+    allowed_types = %w[all movie person tv]
+    allowed_time_windows = %w[day week]
+
+    type = "all" if type.blank?
+    time_window = "week" if time_window.blank?
+
+    unless allowed_types.include?(type.to_s.downcase) && allowed_time_windows.include?(time_window.to_s.downcase)
+      raise ArgumentError, "Invalid type or time_window. Valid types: #{allowed_types.join(', ')}. Valid time_windows: #{allowed_time_windows.join(', ')}"
+    end
+
+    cached(Cache::Keys.tmdb_trending(type, time_window), ttl: Cache::Ttl::TMDB_TRENDING) do
+      tmdb_request("trending/#{type}/#{time_window}")
+    end
   end
 
-  # Collection ()
-  # TV Seasons ()
+  def popular(type)
+    allowed_types = %w[movie person tv]
 
-  # Discover movie/tv
-  def discover(type)
-    # tmdb_request("discover/#{type}")
+    if type.blank?
+      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    type = type.to_s.downcase
+
+    unless allowed_types.include?(type)
+      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    cached(Cache::Keys.tmdb_popular(type), ttl: Cache::Ttl::TMDB_POPULAR) do
+      tmdb_request("#{type}/popular")
+    end
   end
 
-  # Genre movie/tv
-  def genre(type)
-    # tmdb_request("genre/#{type}/list")
+  def available_today(type)
+    allowed_types = %w[movie person tv]
+
+    if type.blank?
+      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    type = type.to_s.downcase
+
+    unless allowed_types.include?(type)
+      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    cached(Cache::Keys.tmdb_available_today(type), ttl: Cache::Ttl::TMDB_AVAILABLE_TODAY) do
+      tmdb_request("#{type}/now_playing") if type == "movie"
+      tmdb_request("#{type}/airing_today") if type == "tv"
+    end
   end
 
-  # Lists movies/tv/persons
-  def lists(type, topic)
-    # https://api.themoviedb.org/3/movie/now_playing
-    # https://api.themoviedb.org/3/movie/popular
-    # https://api.themoviedb.org/3/movie/top_rated
-    # https://api.themoviedb.org/3/movie/upcoming
+  def upcoming(type)
+    allowed_types = %w[movie person tv]
 
-    # https://api.themoviedb.org/3/person/popular
+    if type.blank?
+      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+    end
 
-    # https://api.themoviedb.org/3/tv/airing_today
-    # https://api.themoviedb.org/3/tv/on_the_air
-    # https://api.themoviedb.org/3/tv/popular
-    # https://api.themoviedb.org/3/tv/top_rated
+    type = type.to_s.downcase
+
+    unless allowed_types.include?(type)
+      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    cached(Cache::Keys.tmdb_upcoming(type), ttl: Cache::Ttl::TMDB_UPCOMING) do
+      tmdb_request("#{type}/upcoming") if type == "movie"
+      tmdb_request("#{type}/on_the_air") if type == "tv"
+    end
   end
 
-  # Trending movie/tv
-  def trending(type)
-    # https://api.themoviedb.org/3/trending/all/{time_window}
-    # https://api.themoviedb.org/3/trending/movie/{time_window}
-    # https://api.themoviedb.org/3/trending/person/{time_window}
-    # https://api.themoviedb.org/3/trending/tv/{time_window}
-  end
+  # def discover(type)
+  #   # tmdb_request("discover/#{type}")
+  # end
 
-  # Credits movie/tv
-  def credits(type, id)
-    # https://developer.themoviedb.org/reference/movie-credits
-    # https://developer.themoviedb.org/reference/tv-series-credits
-  end
+  # def genre(type)
+  #   # tmdb_request("genre/#{type}/list")
+  # end
 
-  # Images movie/tv
-  def images(type, id)
-    # https://developer.themoviedb.org/reference/movie-images
-    # https://developer.themoviedb.org/reference/tv-series-images
-  end
+  # def credits(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-credits
+  #   # https://developer.themoviedb.org/reference/tv-series-credits
+  # end
 
-  # External ids movie/tv
-  def external_ids(type, id)
-    # https://developer.themoviedb.org/reference/movie-external-ids
-    # https://developer.themoviedb.org/reference/tv-series-external-ids
-  end
+  # def images(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-images
+  #   # https://developer.themoviedb.org/reference/tv-series-images
+  # end
 
-  # Recommendations movie/tv
-  def recommendations(type, id)
-    # https://developer.themoviedb.org/reference/movie-recommendations
-    # https://developer.themoviedb.org/reference/tv-series-recommendations
-  end
+  # def external_ids(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-external-ids
+  #   # https://developer.themoviedb.org/reference/tv-series-external-ids
+  # end
 
-  # Watch providers movie/tv
-  def watch_providers(type, id)
-    # https://developer.themoviedb.org/reference/movie-watch-providers
-    # https://developer.themoviedb.org/reference/tv-series-watch-providers
-  end
+  # def recommendations(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-recommendations
+  #   # https://developer.themoviedb.org/reference/tv-series-recommendations
+  # end
 
-  # Videos movie/tv
-  def videos(type, id)
-    # https://developer.themoviedb.org/reference/movie-videos
-    # https://developer.themoviedb.org/reference/tv-series-videos
-  end
+  # def watch_providers(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-watch-providers
+  #   # https://developer.themoviedb.org/reference/tv-series-watch-providers
+  # end
+
+  # def videos(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-videos
+  #   # https://developer.themoviedb.org/reference/tv-series-videos
+  # end
+
+  # https://api.themoviedb.org/3/movie/top_rated
+  # https://api.themoviedb.org/3/tv/top_rated
 
   private
 

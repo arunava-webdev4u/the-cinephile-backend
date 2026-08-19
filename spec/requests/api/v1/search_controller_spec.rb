@@ -288,4 +288,6 @@ RSpec.describe "Api::V1::SearchController", type: :request do
       end
     end
   end
+
+  # discovery endpoints moved to DiscoverController
 end
