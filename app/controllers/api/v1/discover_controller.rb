@@ -34,35 +34,15 @@ class Api::V1::DiscoverController < Api::V1::BaseController
     end
   end
 
-  #   def top_rated
-  #     result = @tmdb_service.lists("movie", "top_rated")
+    def upcoming
+      result = @tmdb_service.upcoming(discover_params[:type])
 
-  #     if result.present?
-  #       render json: result, status: :ok
-  #     else
-  #       render json: { error: "No top_rated movies found" }, status: :not_found
-  #     end
-  #   end
-
-  #   def upcoming
-  #     result = @tmdb_service.lists("movie", "upcoming")
-
-  #     if result.present?
-  #       render json: result, status: :ok
-  #     else
-  #       render json: { error: "No upcoming movies found" }, status: :not_found
-  #     end
-  #   end
-
-  #   def now_playing
-  #     result = @tmdb_service.lists("movie", "now_playing")
-
-  #     if result.present?
-  #       render json: result, status: :ok
-  #     else
-  #       render json: { error: "No now_playing movies found" }, status: :not_found
-  #     end
-  #   end
+      if result.present?
+        render json: result, status: :ok
+      else
+        render json: { error: "No upcoming items found" }, status: :not_found
+      end
+    end
 
   private
   def discover_params

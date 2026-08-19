@@ -20,6 +20,10 @@ module Cache
       "tmdb:available_today:#{type}"
     end
 
+    def self.tmdb_upcoming(type)
+      "tmdb:upcoming:#{type}"
+    end
+
     def self.tmdb_entity(type, id)
       "tmdb:#{type}:#{id}"
     end

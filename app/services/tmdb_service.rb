@@ -108,7 +108,7 @@ class TmdbService
     end
   end
 
-  def up_next(type)
+  def upcoming(type)
     allowed_types = %w[movie person tv]
 
     if type.blank?
@@ -121,8 +121,10 @@ class TmdbService
       raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
     end
 
-    # https://api.themoviedb.org/3/movie/upcoming
-    # https://api.themoviedb.org/3/tv/on_the_air
+    cached(Cache::Keys.tmdb_upcoming(type), ttl: Cache::Ttl::TMDB_UPCOMING) do
+      tmdb_request("#{type}/upcoming") if type == "movie"
+      tmdb_request("#{type}/on_the_air") if type == "tv"
+    end
   end
 
   def discover(type)
