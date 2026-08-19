@@ -20,7 +20,17 @@ class Api::V1::DiscoverController < Api::V1::BaseController
     if result.present?
       render json: result, status: :ok
     else
-      render json: { error: "No popular movies found" }, status: :not_found
+      render json: { error: "No popular items found" }, status: :not_found
+    end
+  end
+
+  def available_today
+    result = @tmdb_service.available_today(discover_params[:type])
+
+    if result.present?
+      render json: result, status: :ok
+    else
+      render json: { error: "No available today items found" }, status: :not_found
     end
   end
 

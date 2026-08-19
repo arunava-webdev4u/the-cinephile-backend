@@ -55,7 +55,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/popular?type=movie", headers: headers
 
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)["error"]).to eq("No popular movies found")
+        expect(JSON.parse(response.body)["error"]).to eq("No popular items found")
       end
     end
 
@@ -132,6 +132,82 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
 
       it "returns service unavailable" do
         get "/api/v1/discover/trending", headers: headers
+
+        expect(response).to have_http_status(:service_unavailable)
+        expect(JSON.parse(response.body)).to include("error" => "External service unavailable")
+      end
+    end
+  end
+
+  describe "GET /api/v1/discover/available_today" do
+    let(:success_response) { { "results" => [ { "id" => 30, "title" => "Available Today Movie" } ] } }
+
+    context "when TMDB returns results" do
+      before do
+        allow(tmdb_service).to receive(:available_today).with("movie").and_return(success_response)
+      end
+
+      it "calls TmdbService.available_today with the required type and returns results" do
+        get "/api/v1/discover/available_today?type=movie", headers: headers
+
+        expect(tmdb_service).to have_received(:available_today).with("movie")
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to eq(success_response.to_json)
+      end
+    end
+
+    context "when type is missing" do
+      before do
+        allow(tmdb_service).to receive(:available_today).with(nil).and_raise(
+          ArgumentError,
+          "Type is required. Valid types: movie, person, tv"
+        )
+      end
+
+      it "returns bad_request with a required-type error" do
+        get "/api/v1/discover/available_today", headers: headers
+
+        expect(response).to have_http_status(:bad_request)
+        expect(JSON.parse(response.body)["error"]).to include("Type is required")
+      end
+    end
+
+    context "when TMDB returns no results" do
+      before do
+        allow(tmdb_service).to receive(:available_today).with("movie").and_return([])
+      end
+
+      it "returns not_found with an error message" do
+        get "/api/v1/discover/available_today?type=movie", headers: headers
+
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)["error"]).to eq("No available today items found")
+      end
+    end
+
+    context "when invalid params are sent" do
+      before do
+        allow(tmdb_service).to receive(:available_today).with("invalid_type").and_raise(
+          ArgumentError,
+          "Invalid type. Valid types: movie, person, tv"
+        )
+      end
+
+      it "returns bad_request with the validation error" do
+        get "/api/v1/discover/available_today?type=invalid_type", headers: headers
+
+        expect(response).to have_http_status(:bad_request)
+        expect(JSON.parse(response.body)["error"]).to include("Invalid type")
+      end
+    end
+
+    context "when TMDB API fails" do
+      before do
+        allow(tmdb_service).to receive(:available_today).with("movie").and_raise(TmdbService::TmdbError, "Service unavailable")
+      end
+
+      it "returns service unavailable" do
+        get "/api/v1/discover/available_today?type=movie", headers: headers
 
         expect(response).to have_http_status(:service_unavailable)
         expect(JSON.parse(response.body)).to include("error" => "External service unavailable")

@@ -42,7 +42,7 @@ Rails.application.routes.draw do
         collection do
           get :trending
           get :popular
-          get :top_rated
+          get :available_today
           get :upcoming
           get :now_playing
         end

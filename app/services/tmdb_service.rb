@@ -89,26 +89,48 @@ class TmdbService
     end
   end
 
+  def available_today(type)
+    allowed_types = %w[movie person tv]
+
+    if type.blank?
+      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    type = type.to_s.downcase
+
+    unless allowed_types.include?(type)
+      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    cached(Cache::Keys.tmdb_available_today(type), ttl: Cache::Ttl::TMDB_AVAILABLE_TODAY) do
+      tmdb_request("#{type}/now_playing") if type == "movie"
+      tmdb_request("#{type}/airing_today") if type == "tv"
+    end
+  end
+
+  def up_next(type)
+    allowed_types = %w[movie person tv]
+
+    if type.blank?
+      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    type = type.to_s.downcase
+
+    unless allowed_types.include?(type)
+      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+    end
+
+    # https://api.themoviedb.org/3/movie/upcoming
+    # https://api.themoviedb.org/3/tv/on_the_air
+  end
+
   def discover(type)
     # tmdb_request("discover/#{type}")
   end
 
   def genre(type)
     # tmdb_request("genre/#{type}/list")
-  end
-
-  def lists(type, topic)
-    # https://api.themoviedb.org/3/movie/now_playing
-    # https://api.themoviedb.org/3/movie/popular
-    # https://api.themoviedb.org/3/movie/top_rated
-    # https://api.themoviedb.org/3/movie/upcoming
-
-    # https://api.themoviedb.org/3/person/popular
-
-    # https://api.themoviedb.org/3/tv/airing_today
-    # https://api.themoviedb.org/3/tv/on_the_air
-    # https://api.themoviedb.org/3/tv/popular
-    # https://api.themoviedb.org/3/tv/top_rated
   end
 
   def credits(type, id)
@@ -140,6 +162,9 @@ class TmdbService
     # https://developer.themoviedb.org/reference/movie-videos
     # https://developer.themoviedb.org/reference/tv-series-videos
   end
+
+    # https://api.themoviedb.org/3/movie/top_rated
+    # https://api.themoviedb.org/3/tv/top_rated
 
   private
 

@@ -1,9 +1,5 @@
 module Cache
   module Keys
-    def self.tmdb_entity(type, id)
-      "tmdb:#{type}:#{id}"
-    end
-
     def self.tmdb_search(type, query)
       "tmdb:search:#{type}:#{query.downcase.strip}"
     end
@@ -18,6 +14,14 @@ module Cache
 
     def self.tmdb_popular(type)
       "tmdb:popular:#{type}"
+    end
+
+    def self.tmdb_available_today(type)
+      "tmdb:available_today:#{type}"
+    end
+
+    def self.tmdb_entity(type, id)
+      "tmdb:#{type}:#{id}"
     end
 
     def self.user_profile(user_id)
