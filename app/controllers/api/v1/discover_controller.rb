@@ -34,15 +34,15 @@ class Api::V1::DiscoverController < Api::V1::BaseController
     end
   end
 
-    def upcoming
-      result = @tmdb_service.upcoming(discover_params[:type])
+  def upcoming
+    result = @tmdb_service.upcoming(discover_params[:type])
 
-      if result.present?
-        render json: result, status: :ok
-      else
-        render json: { error: "No upcoming items found" }, status: :not_found
-      end
+    if result.present?
+      render json: result, status: :ok
+    else
+      render json: { error: "No upcoming items found" }, status: :not_found
     end
+  end
 
   private
   def discover_params

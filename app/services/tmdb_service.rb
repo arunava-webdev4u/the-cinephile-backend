@@ -127,46 +127,46 @@ class TmdbService
     end
   end
 
-  def discover(type)
-    # tmdb_request("discover/#{type}")
-  end
+  # def discover(type)
+  #   # tmdb_request("discover/#{type}")
+  # end
 
-  def genre(type)
-    # tmdb_request("genre/#{type}/list")
-  end
+  # def genre(type)
+  #   # tmdb_request("genre/#{type}/list")
+  # end
 
-  def credits(type, id)
-    # https://developer.themoviedb.org/reference/movie-credits
-    # https://developer.themoviedb.org/reference/tv-series-credits
-  end
+  # def credits(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-credits
+  #   # https://developer.themoviedb.org/reference/tv-series-credits
+  # end
 
-  def images(type, id)
-    # https://developer.themoviedb.org/reference/movie-images
-    # https://developer.themoviedb.org/reference/tv-series-images
-  end
+  # def images(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-images
+  #   # https://developer.themoviedb.org/reference/tv-series-images
+  # end
 
-  def external_ids(type, id)
-    # https://developer.themoviedb.org/reference/movie-external-ids
-    # https://developer.themoviedb.org/reference/tv-series-external-ids
-  end
+  # def external_ids(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-external-ids
+  #   # https://developer.themoviedb.org/reference/tv-series-external-ids
+  # end
 
-  def recommendations(type, id)
-    # https://developer.themoviedb.org/reference/movie-recommendations
-    # https://developer.themoviedb.org/reference/tv-series-recommendations
-  end
+  # def recommendations(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-recommendations
+  #   # https://developer.themoviedb.org/reference/tv-series-recommendations
+  # end
 
-  def watch_providers(type, id)
-    # https://developer.themoviedb.org/reference/movie-watch-providers
-    # https://developer.themoviedb.org/reference/tv-series-watch-providers
-  end
+  # def watch_providers(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-watch-providers
+  #   # https://developer.themoviedb.org/reference/tv-series-watch-providers
+  # end
 
-  def videos(type, id)
-    # https://developer.themoviedb.org/reference/movie-videos
-    # https://developer.themoviedb.org/reference/tv-series-videos
-  end
+  # def videos(type, id)
+  #   # https://developer.themoviedb.org/reference/movie-videos
+  #   # https://developer.themoviedb.org/reference/tv-series-videos
+  # end
 
-    # https://api.themoviedb.org/3/movie/top_rated
-    # https://api.themoviedb.org/3/tv/top_rated
+  # https://api.themoviedb.org/3/movie/top_rated
+  # https://api.themoviedb.org/3/tv/top_rated
 
   private
 

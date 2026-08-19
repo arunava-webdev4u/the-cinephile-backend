@@ -175,6 +175,52 @@ RSpec.describe TmdbService, type: :service do
         end
     end
 
+    describe "#upcoming" do
+        let(:expected_response) { { 'results' => [ { 'id' => 401, 'title' => 'Upcoming Movie' } ] } }
+        let!(:service) { described_class.new }
+
+        before do
+            allow(Cache::Store).to receive(:fetch).and_yield.and_return(expected_response)
+            allow(service).to receive(:tmdb_request).and_return(expected_response)
+        end
+
+        it 'calls tmdb_request with the correct movie path' do
+            service.upcoming('movie')
+            expect(service).to have_received(:tmdb_request).with('movie/upcoming')
+        end
+
+        it 'calls tmdb_request with the correct tv path' do
+            service.upcoming('tv')
+            expect(service).to have_received(:tmdb_request).with('tv/on_the_air')
+        end
+
+        it 'returns the API response' do
+            response = service.upcoming('movie')
+            expect(response).to eq(expected_response)
+        end
+
+        it 'raises ArgumentError when no type is passed' do
+            expect { service.upcoming(nil) }
+                .to raise_error(ArgumentError, /Type is required/)
+
+            expect { service.upcoming('') }
+                .to raise_error(ArgumentError, /Type is required/)
+        end
+
+        it 'raises ArgumentError for invalid type' do
+            expect { service.upcoming('invalid_type') }
+                .to raise_error(ArgumentError, /Invalid type/)
+        end
+
+        it 'uses Cache::Store.fetch with correct key and ttl' do
+            allow(Cache::Store).to receive(:fetch).and_yield.and_return(expected_response)
+
+            service.upcoming('movie')
+
+            expect(Cache::Store).to have_received(:fetch).with(Cache::Keys.tmdb_upcoming('movie'), ttl: Cache::Ttl::TMDB_UPCOMING)
+        end
+    end
+
     describe "#tmdb_request" do
         BASE_URL_V3 = "https://api.themoviedb.org/3"
         url = URI("#{BASE_URL_V3}/resource_path")
