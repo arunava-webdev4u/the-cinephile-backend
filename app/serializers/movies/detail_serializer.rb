@@ -1,5 +1,5 @@
 # # app/serializers/movies/detail_serializer.rb
-
+class Movies::DetailSerializer; end
 # module Movies
 #   class DetailSerializer
 #     def initialize(item, tmdb)
