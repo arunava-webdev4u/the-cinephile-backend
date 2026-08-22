@@ -42,7 +42,7 @@ class TmdbService
   def search_by_id(id, type)
     valid_types = %w[movie tv person]
     type = type.to_s.downcase
-    
+
     unless valid_types.include?(type)
       raise ClientError, "Invalid type '#{type}'. Valid types: #{valid_types.join(', ')}"
     end
