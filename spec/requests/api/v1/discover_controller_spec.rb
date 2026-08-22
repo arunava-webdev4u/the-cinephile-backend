@@ -33,7 +33,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
     context "when type is missing" do
       before do
         allow(tmdb_service).to receive(:popular).with(nil).and_raise(
-          ArgumentError,
+          TmdbService::ClientError,
           "Type is required. Valid types: movie, person, tv"
         )
       end
@@ -42,7 +42,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/popular", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to include("Type is required")
+        expect(JSON.parse(response.body)["detail"]).to include("Type is required")
       end
     end
 
@@ -68,7 +68,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/popular?type=movie", headers: headers
 
         expect(response).to have_http_status(:service_unavailable)
-        expect(JSON.parse(response.body)).to include("error" => "External service unavailable")
+        expect(JSON.parse(response.body)).to include("title" => "Service Unavailable", "detail" => "External service unavailable: Service unavailable")
       end
     end
   end
@@ -114,14 +114,14 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
 
     context "when invalid params are sent" do
       before do
-        allow(tmdb_service).to receive(:trending).with("invalid_type", "week").and_raise(ArgumentError, "Invalid type or time_window. Valid types: all, movie, person, tv. Valid time_windows: day, week")
+        allow(tmdb_service).to receive(:trending).with("invalid_type", "week").and_raise(TmdbService::ClientError, "Invalid type or time_window. Valid types: all, movie, person, tv. Valid time_windows: day, week")
       end
 
       it "returns bad_request with the validation error" do
         get "/api/v1/discover/trending?type=invalid_type&time_window=week", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to include("Invalid type or time_window")
+        expect(JSON.parse(response.body)["detail"]).to include("Invalid type or time_window")
       end
     end
 
@@ -134,7 +134,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/trending", headers: headers
 
         expect(response).to have_http_status(:service_unavailable)
-        expect(JSON.parse(response.body)).to include("error" => "External service unavailable")
+        expect(JSON.parse(response.body)).to include("title" => "Service Unavailable", "detail" => "External service unavailable: Service unavailable")
       end
     end
   end
@@ -159,7 +159,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
     context "when type is missing" do
       before do
         allow(tmdb_service).to receive(:available_today).with(nil).and_raise(
-          ArgumentError,
+          TmdbService::ClientError,
           "Type is required. Valid types: movie, person, tv"
         )
       end
@@ -168,7 +168,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/available_today", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to include("Type is required")
+        expect(JSON.parse(response.body)["detail"]).to include("Type is required")
       end
     end
 
@@ -188,7 +188,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
     context "when invalid params are sent" do
       before do
         allow(tmdb_service).to receive(:available_today).with("invalid_type").and_raise(
-          ArgumentError,
+          TmdbService::ClientError,
           "Invalid type. Valid types: movie, person, tv"
         )
       end
@@ -197,7 +197,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/available_today?type=invalid_type", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to include("Invalid type")
+        expect(JSON.parse(response.body)["detail"]).to include("Invalid type")
       end
     end
 
@@ -210,7 +210,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/available_today?type=movie", headers: headers
 
         expect(response).to have_http_status(:service_unavailable)
-        expect(JSON.parse(response.body)).to include("error" => "External service unavailable")
+        expect(JSON.parse(response.body)).to include("title" => "Service Unavailable", "detail" => "External service unavailable: Service unavailable")
       end
     end
   end
@@ -235,7 +235,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
     context "when type is missing" do
       before do
         allow(tmdb_service).to receive(:upcoming).with(nil).and_raise(
-          ArgumentError,
+          TmdbService::ClientError,
           "Type is required. Valid types: movie, person, tv"
         )
       end
@@ -244,7 +244,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/upcoming", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to include("Type is required")
+        expect(JSON.parse(response.body)["detail"]).to include("Type is required")
       end
     end
 
@@ -264,7 +264,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
     context "when invalid params are sent" do
       before do
         allow(tmdb_service).to receive(:upcoming).with("invalid_type").and_raise(
-          ArgumentError,
+          TmdbService::ClientError,
           "Invalid type. Valid types: movie, person, tv"
         )
       end
@@ -273,7 +273,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/upcoming?type=invalid_type", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to include("Invalid type")
+        expect(JSON.parse(response.body)["detail"]).to include("Invalid type")
       end
     end
 
@@ -286,7 +286,7 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         get "/api/v1/discover/upcoming?type=movie", headers: headers
 
         expect(response).to have_http_status(:service_unavailable)
-        expect(JSON.parse(response.body)).to include("error" => "External service unavailable")
+        expect(JSON.parse(response.body)).to include("title" => "Service Unavailable", "detail" => "External service unavailable: Service unavailable")
       end
     end
   end

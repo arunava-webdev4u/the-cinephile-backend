@@ -5,12 +5,12 @@ class TmdbService
   BASE_URL_V3 = "https://api.themoviedb.org/3"
   VALID_SEARCH_TYPES = %w[movie tv person].freeze
 
-  # Custom exceptions for better error handling
   class TmdbError < StandardError; end
+  class ClientError < TmdbError; end        # NEW: bad user input → 400
   class AuthenticationError < TmdbError; end
-  class RateLimitError < TmdbError; end   # new
-  class ServerError < TmdbError; end      # optional, for 5xx
-  class NotFoundError < TmdbError; end    # optional, for 404
+  class NotFoundError < TmdbError; end      # valid input, but TMDB doesn't have it → 404
+  class RateLimitError < TmdbError; end     # → 429
+  class ServerError < TmdbError; end        # → 503
 
   def initialize
     @api_token = ENV["TMDB_API_READ_ACCESS_TOKEN"]
@@ -27,12 +27,26 @@ class TmdbService
   end
 
   def search_by_name(query, type)
+    valid_types = %w[movie tv person]
+    type = type.to_s.downcase
+
+    unless valid_types.include?(type)
+      raise ClientError, "Invalid type '#{type}'. Valid types: #{valid_types.join(', ')}"
+    end
+
     cached(Cache::Keys.tmdb_search(type, query), ttl: Cache::Ttl::TMDB_SEARCH) do
       tmdb_request("search/#{type}?query=#{query}")
     end
   end
 
   def search_by_id(id, type)
+    valid_types = %w[movie tv person]
+    type = type.to_s.downcase
+    
+    unless valid_types.include?(type)
+      raise ClientError, "Invalid type '#{type}'. Valid types: #{valid_types.join(', ')}"
+    end
+
     cached(Cache::Keys.tmdb_entity(type, id), ttl: Cache::Ttl::TMDB_ENTITY) do
       tmdb_request("#{type}/#{id}")
     end
@@ -63,7 +77,7 @@ class TmdbService
     time_window = "week" if time_window.blank?
 
     unless allowed_types.include?(type.to_s.downcase) && allowed_time_windows.include?(time_window.to_s.downcase)
-      raise ArgumentError, "Invalid type or time_window. Valid types: #{allowed_types.join(', ')}. Valid time_windows: #{allowed_time_windows.join(', ')}"
+      raise ClientError, "Invalid type or time_window. Valid types: #{allowed_types.join(', ')}. Valid time_windows: #{allowed_time_windows.join(', ')}"
     end
 
     cached(Cache::Keys.tmdb_trending(type, time_window), ttl: Cache::Ttl::TMDB_TRENDING) do
@@ -75,13 +89,13 @@ class TmdbService
     allowed_types = %w[movie person tv]
 
     if type.blank?
-      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+      raise ClientError, "Type is required. Valid types: #{allowed_types.join(', ')}"
     end
 
     type = type.to_s.downcase
 
     unless allowed_types.include?(type)
-      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+      raise ClientError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
     end
 
     cached(Cache::Keys.tmdb_popular(type), ttl: Cache::Ttl::TMDB_POPULAR) do
@@ -93,13 +107,13 @@ class TmdbService
     allowed_types = %w[movie person tv]
 
     if type.blank?
-      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+      raise ClientError, "Type is required. Valid types: #{allowed_types.join(', ')}"
     end
 
     type = type.to_s.downcase
 
     unless allowed_types.include?(type)
-      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+      raise ClientError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
     end
 
     cached(Cache::Keys.tmdb_available_today(type), ttl: Cache::Ttl::TMDB_AVAILABLE_TODAY) do
@@ -112,13 +126,13 @@ class TmdbService
     allowed_types = %w[movie person tv]
 
     if type.blank?
-      raise ArgumentError, "Type is required. Valid types: #{allowed_types.join(', ')}"
+      raise ClientError, "Type is required. Valid types: #{allowed_types.join(', ')}"
     end
 
     type = type.to_s.downcase
 
     unless allowed_types.include?(type)
-      raise ArgumentError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
+      raise ClientError, "Invalid type. Valid types: #{allowed_types.join(', ')}"
     end
 
     cached(Cache::Keys.tmdb_upcoming(type), ttl: Cache::Ttl::TMDB_UPCOMING) do

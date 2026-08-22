@@ -39,62 +39,58 @@ RSpec.describe "Api::V1::SearchController", type: :request do
     end
 
     context "when type parameter is blank" do
-      it "should not call TmdbService" do
-        get "/api/v1/search/name?type=#{}&query=#{query}", headers: headers
-
-        expect(tmdb_service).not_to have_received(:search_by_name)
+      before do
+        allow(tmdb_service).to receive(:search_by_name).with(query, "").and_raise(
+          TmdbService::ClientError, "Invalid type ''. Valid types: movie, tv, person"
+        )
       end
 
-      it "returns bad request with error message" do
+      it "returns bad request with error detail" do
         get "/api/v1/search/name?type=#{}&query=#{query}", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to eq("Type parameter is required")
+        expect(JSON.parse(response.body)["detail"]).to include("Invalid type")
       end
     end
 
     context "when type parameter is missing" do
-      it "should not call TmdbService" do
-        get "/api/v1/search/name?query=#{query}", headers: headers
-
-        expect(tmdb_service).not_to have_received(:search_by_name)
+      before do
+        allow(tmdb_service).to receive(:search_by_name).and_raise(
+          TmdbService::ClientError, "Invalid type ''. Valid types: movie, tv, person"
+        )
       end
 
-      it "returns bad request with error message" do
+      it "returns bad request with error detail" do
         get "/api/v1/search/name?query=#{query}", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to eq("Type parameter is required")
+        expect(JSON.parse(response.body)["detail"]).to include("Invalid type")
       end
     end
 
     context "when query parameter is blank" do
-      it "should not call TmdbService" do
-        get "/api/v1/search/name?type=#{type}&query=#{}", headers: headers
-
-        expect(tmdb_service).not_to have_received(:search_by_name)
+      before do
+        allow(tmdb_service).to receive(:search_by_name).with("", type).and_return({ "results" => [] })
       end
 
-      it "returns bad request with error message" do
+      it "calls TmdbService with empty query and returns results" do
         get "/api/v1/search/name?type=#{type}&query=#{}", headers: headers
 
-        expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to eq("Either query or tmdb_id parameter is not present")
+        expect(tmdb_service).to have_received(:search_by_name).with("", type)
+        expect(response).to have_http_status(:ok)
       end
     end
 
     context "when query parameter is missing" do
-      it "should not call TmdbService" do
-        get "/api/v1/search/name?type=#{type}", headers: headers
-
-        expect(tmdb_service).not_to have_received(:search_by_name)
+      before do
+        allow(tmdb_service).to receive(:search_by_name).with(nil, type).and_return({ "results" => [] })
       end
 
-      it "returns bad request with error message" do
+      it "calls TmdbService with nil query and returns results" do
         get "/api/v1/search/name?type=#{type}", headers: headers
 
-        expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to eq("Either query or tmdb_id parameter is not present")
+        expect(tmdb_service).to have_received(:search_by_name).with(nil, type)
+        expect(response).to have_http_status(:ok)
       end
     end
   end
@@ -124,84 +120,64 @@ RSpec.describe "Api::V1::SearchController", type: :request do
     end
 
     context "when type parameter is blank" do
-      it "should not call TmdbService" do
-        get "/api/v1/search/id?type=#{}&tmdb_id=#{tmdb_id}", headers: headers
-
-        expect(tmdb_service).not_to have_received(:search_by_id)
+      before do
+        allow(tmdb_service).to receive(:search_by_id).and_raise(
+          TmdbService::ClientError, "Invalid type ''. Valid types: movie, tv, person"
+        )
       end
 
-      it "returns bad request with error message" do
+      it "returns bad request with error detail" do
         get "/api/v1/search/id?type=#{}&tmdb_id=#{tmdb_id}", headers: headers
 
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to eq("Type parameter is required")
+        expect(JSON.parse(response.body)["detail"]).to include("Invalid type")
       end
     end
 
     context "when type parameter is missing" do
-      it "should not call TmdbService" do
+      before do
+        allow(tmdb_service).to receive(:search_by_id).and_raise(
+          TmdbService::ClientError, "Invalid type ''. Valid types: movie, tv, person"
+        )
+      end
+
+      it "returns bad request with error detail" do
         get "/api/v1/search/id?tmdb_id=#{tmdb_id}", headers: headers
 
-        expect(tmdb_service).not_to have_received(:search_by_id)
-      end
-
-      it "returns bad request with error message" do
-        get "/api/v1/search/id?tmdb_id=#{tmdb_id}", headers: headers
-
         expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to eq("Type parameter is required")
+        expect(JSON.parse(response.body)["detail"]).to include("Invalid type")
       end
     end
 
-    context "when tmdb_id parameter is missing" do
-      it "should not call TmdbService" do
+    context "when tmdb_id parameter is missing or blank" do
+      before do
+        allow(tmdb_service).to receive(:search_by_id).with("", type).and_raise(
+          TmdbService::NotFoundError, "Resource not found"
+        )
+      end
+
+      it "returns not_found with error detail" do
         get "/api/v1/search/id?type=#{type}&tmdb_id=#{}", headers: headers
 
-        expect(tmdb_service).not_to have_received(:search_by_id)
-      end
-
-      it "returns bad request with error message" do
-        get "/api/v1/search/id?type=#{type}&tmdb_id=#{}", headers: headers
-
-        expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to eq("Either query or tmdb_id parameter is not present")
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)["detail"]).to eq("Resource not found")
       end
     end
 
-    context "when tmdb_id parameter is blank" do
-      it "should not call TmdbService" do
-        get "/api/v1/search/id?type=#{type}", headers: headers
-
-        expect(tmdb_service).not_to have_received(:search_by_id)
-      end
-
-      it "returns bad request with error message" do
-        get "/api/v1/search/id?type=#{type}", headers: headers
-
-        expect(response).to have_http_status(:bad_request)
-        expect(JSON.parse(response.body)["error"]).to eq("Either query or tmdb_id parameter is not present")
-      end
-    end
-
-        context "with an invalid type parameter" do
+    context "with an invalid type parameter" do
       let(:invalid_type) { "album" }
-      let(:tmdb_error_response) { { "success" => false, "status_code" => 34, "status_message" => "The resource you requested could not be found." } }
 
       before do
-        allow(tmdb_service).to receive(:search_by_id).with(tmdb_id, invalid_type).and_return(tmdb_error_response)
+        allow(tmdb_service).to receive(:search_by_id).with(tmdb_id, invalid_type).and_raise(
+          TmdbService::ClientError, "Invalid type 'album'. Valid types: movie, tv, person"
+        )
       end
 
-      it "calls TmdbService with the invalid type" do
+      it "returns bad request with the validation error" do
         get "/api/v1/search/id?type=#{invalid_type}&tmdb_id=#{tmdb_id}", headers: headers
 
-        expect(tmdb_service).to have_received(:search_by_id).with(tmdb_id, invalid_type)
-      end
-
-      it "returns the TMDB error response" do
-        get "/api/v1/search/id?type=#{invalid_type}&tmdb_id=#{tmdb_id}", headers: headers
-
-        expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)).to eq(tmdb_error_response)
+        expect(response).to have_http_status(:bad_request)
+        expect(JSON.parse(response.body)["detail"]).to include("Invalid type 'album'")
       end
     end
 
@@ -214,7 +190,8 @@ RSpec.describe "Api::V1::SearchController", type: :request do
         get "/api/v1/search/id?type=#{type}&tmdb_id=#{tmdb_id}", headers: headers
 
         expect(response).to have_http_status(:service_unavailable)
-        expect(JSON.parse(response.body)).to include("error" => "External service unavailable")
+        expect(JSON.parse(response.body)["title"]).to eq("Service Unavailable")
+        expect(JSON.parse(response.body)["detail"]).to include("External service unavailable")
       end
     end
   end
@@ -284,10 +261,9 @@ RSpec.describe "Api::V1::SearchController", type: :request do
         get "/api/v1/search/multi?query=#{query}", headers: headers
 
         expect(response).to have_http_status(:service_unavailable)
-        expect(JSON.parse(response.body)).to include("error" => "External service unavailable")
+        expect(JSON.parse(response.body)["title"]).to eq("Service Unavailable")
+        expect(JSON.parse(response.body)["detail"]).to include("External service unavailable")
       end
     end
   end
-
-  # discovery endpoints moved to DiscoverController
 end
