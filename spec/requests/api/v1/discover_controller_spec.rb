@@ -51,11 +51,11 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         allow(tmdb_service).to receive(:popular).with("movie").and_return([])
       end
 
-      it "returns not_found with an error message" do
+      it "returns ok with an empty result" do
         get "/api/v1/discover/popular?type=movie", headers: headers
 
-        expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)["error"]).to eq("No popular items found")
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq([])
       end
     end
 
@@ -104,11 +104,11 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         allow(tmdb_service).to receive(:trending).with(nil, nil).and_return([])
       end
 
-      it "returns not_found with an error message" do
+      it "returns ok with an empty result" do
         get "/api/v1/discover/trending", headers: headers
 
-        expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)["error"]).to eq("No trending items found")
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq([])
       end
     end
 
@@ -177,11 +177,11 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         allow(tmdb_service).to receive(:available_today).with("movie").and_return([])
       end
 
-      it "returns not_found with an error message" do
+      it "returns ok with an empty result" do
         get "/api/v1/discover/available_today?type=movie", headers: headers
 
-        expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)["error"]).to eq("No available today items found")
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq([])
       end
     end
 
@@ -253,11 +253,11 @@ RSpec.describe "Api::V1::DiscoverController", type: :request do
         allow(tmdb_service).to receive(:upcoming).with("movie").and_return([])
       end
 
-      it "returns not_found with an error message" do
+      it "returns ok with an empty result" do
         get "/api/v1/discover/upcoming?type=movie", headers: headers
 
-        expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)["error"]).to eq("No upcoming items found")
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq([])
       end
     end
 

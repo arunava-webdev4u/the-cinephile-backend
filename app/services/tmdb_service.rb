@@ -104,7 +104,7 @@ class TmdbService
   end
 
   def available_today(type)
-    allowed_types = %w[movie person tv]
+    allowed_types = %w[movie tv]
 
     if type.blank?
       raise ClientError, "Type is required. Valid types: #{allowed_types.join(', ')}"
@@ -123,7 +123,7 @@ class TmdbService
   end
 
   def upcoming(type)
-    allowed_types = %w[movie person tv]
+    allowed_types = %w[movie tv]
 
     if type.blank?
       raise ClientError, "Type is required. Valid types: #{allowed_types.join(', ')}"

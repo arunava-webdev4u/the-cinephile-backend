@@ -2,6 +2,7 @@ source "https://rubygems.org"
 
 rails_version = "8.0.2"
 gem "activejob", rails_version
+gem "actionmailer", rails_version
 gem "activemodel", rails_version
 gem "activerecord", rails_version
 gem "railties", rails_version
