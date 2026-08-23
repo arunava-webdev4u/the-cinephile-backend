@@ -127,12 +127,11 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       end
 
       context "when list does not exist" do
-        it "raises an error (ActionController::RoutingError or RecordNotFound)" do
+        it "returns not_found (RecordNotFound handled globally)" do
           get "/api/v1/custom_list/99999/list_items", headers: headers
           expect(response).to have_http_status(:not_found)
           parsed_response = JSON.parse(response.body)
-          expect(parsed_response).to include("error")
-          expect(parsed_response["error"]).to eq("List not found")
+          expect(parsed_response["title"]).to eq("Not Found")
         end
       end
     end
@@ -176,13 +175,12 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       end
 
       context "when list does not exist" do
-        it "raises an error" do
+        it "returns not_found" do
           post "/api/v1/custom_list/99999/list_items", params: valid_params.to_json, headers: headers
 
           expect(response).to have_http_status(:not_found)
           parsed_response = JSON.parse(response.body)
-          expect(parsed_response).to include("error")
-          expect(parsed_response["error"]).to eq("List not found")
+          expect(parsed_response["title"]).to eq("Not Found")
         end
       end
     end
@@ -211,8 +209,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         it "receives not found" do
           delete "/api/v1/custom_list/#{custom_list.id}/list_items/99999", headers: headers
           expect(response).to have_http_status(:not_found)
-          expect(JSON.parse(response.body)).to include("error")
-          expect(JSON.parse(response.body)["error"]).to eq("List item not found")
+          expect(JSON.parse(response.body)["title"]).to eq("Not Found")
         end
       end
 
@@ -220,8 +217,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         it "receives not found" do
           delete "/api/v1/custom_list/99999/list_items/#{list_item.id}", headers: headers
           expect(response).to have_http_status(:not_found)
-          expect(JSON.parse(response.body)).to include("error")
-          expect(JSON.parse(response.body)["error"]).to eq("List not found")
+          expect(JSON.parse(response.body)["title"]).to eq("Not Found")
         end
       end
     end
@@ -263,13 +259,12 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       end
 
       context "when list does not exist" do
-        it "raises an error" do
+        it "returns not_found" do
           get "/api/v1/default_list/99999/list_items", headers: headers
 
           expect(response).to have_http_status(:not_found)
           parsed_response = JSON.parse(response.body)
-          expect(parsed_response).to include("error")
-          expect(parsed_response["error"]).to eq("List not found")
+          expect(parsed_response["title"]).to eq("Not Found")
         end
       end
     end
@@ -338,11 +333,9 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         allow(tmdb_service).to receive(:fetch_batch).and_return([ { id: 550, title: "Fight Club" } ])
 
         get "/api/v1/custom_list/#{other_user_list.id}/list_items", headers: headers
-        # ###############
 
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)).to include("error")
-        expect(JSON.parse(response.body)["error"]).to eq("List not found")
+        expect(JSON.parse(response.body)["title"]).to eq("Not Found")
       end
 
       it "does not allow creating list items in another user's list" do
@@ -353,8 +346,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         }.not_to change(ListItem, :count)
 
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)).to include("error")
-        expect(JSON.parse(response.body)["error"]).to eq("List not found")
+        expect(JSON.parse(response.body)["title"]).to eq("Not Found")
       end
 
       it "does not allow deleting another user's list items" do
@@ -365,8 +357,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         }.not_to change(ListItem, :count)
 
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)).to include("error")
-        expect(JSON.parse(response.body)["error"]).to eq("List not found")
+        expect(JSON.parse(response.body)["title"]).to eq("Not Found")
       end
     end
 
