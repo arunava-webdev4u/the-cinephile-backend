@@ -1,4 +1,4 @@
-class Api::V1::MetadataController < Api::V1::ApplicationController
+class Api::V1::MetadataController < Api::V1::BaseController
   skip_before_action :authenticate_user!, only: [ :countries ]
 
   def countries

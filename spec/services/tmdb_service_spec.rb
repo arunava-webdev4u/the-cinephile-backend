@@ -76,14 +76,14 @@ RSpec.describe TmdbService, type: :service do
         end
 
             context 'error handling' do
-                it 'raises ArgumentError for invalid type' do
+                it 'raises ClientError for invalid type' do
                     expect { service.trending('album', 'week') }
-                        .to raise_error(ArgumentError, /Invalid type or time_window/)
+                        .to raise_error(TmdbService::ClientError, /Invalid type or time_window/)
                 end
 
-                it 'raises ArgumentError for invalid time_window' do
+                it 'raises ClientError for invalid time_window' do
                     expect { service.trending('movie', 'month') }
-                        .to raise_error(ArgumentError, /Invalid type or time_window/)
+                        .to raise_error(TmdbService::ClientError, /Invalid type or time_window/)
                 end
 
                 it 'propagates TmdbError from tmdb_request' do
@@ -115,17 +115,17 @@ RSpec.describe TmdbService, type: :service do
             expect(response).to eq(expected_response)
         end
 
-        it 'raises ArgumentError when no type is passed' do
+        it 'raises ClientError when no type is passed' do
             expect { service.popular(nil) }
-                .to raise_error(ArgumentError, /Type is required/)
+                .to raise_error(TmdbService::ClientError, /Type is required/)
 
             expect { service.popular('') }
-                .to raise_error(ArgumentError, /Type is required/)
+                .to raise_error(TmdbService::ClientError, /Type is required/)
         end
 
-        it 'raises ArgumentError for invalid type' do
+        it 'raises ClientError for invalid type' do
             expect { service.popular('invalid_type') }
-                .to raise_error(ArgumentError, /Invalid type/)
+                .to raise_error(TmdbService::ClientError, /Invalid type/)
         end
     end
 
@@ -153,17 +153,17 @@ RSpec.describe TmdbService, type: :service do
             expect(response).to eq(expected_response)
         end
 
-        it 'raises ArgumentError when no type is passed' do
+        it 'raises ClientError when no type is passed' do
             expect { service.available_today(nil) }
-                .to raise_error(ArgumentError, /Type is required/)
+                .to raise_error(TmdbService::ClientError, /Type is required/)
 
             expect { service.available_today('') }
-                .to raise_error(ArgumentError, /Type is required/)
+                .to raise_error(TmdbService::ClientError, /Type is required/)
         end
 
-        it 'raises ArgumentError for invalid type' do
+        it 'raises ClientError for invalid type' do
             expect { service.available_today('invalid_type') }
-                .to raise_error(ArgumentError, /Invalid type/)
+                .to raise_error(TmdbService::ClientError, /Invalid type/)
         end
 
         it 'uses Cache::Store.fetch with correct key and ttl' do
@@ -199,17 +199,17 @@ RSpec.describe TmdbService, type: :service do
             expect(response).to eq(expected_response)
         end
 
-        it 'raises ArgumentError when no type is passed' do
+        it 'raises ClientError when no type is passed' do
             expect { service.upcoming(nil) }
-                .to raise_error(ArgumentError, /Type is required/)
+                .to raise_error(TmdbService::ClientError, /Type is required/)
 
             expect { service.upcoming('') }
-                .to raise_error(ArgumentError, /Type is required/)
+                .to raise_error(TmdbService::ClientError, /Type is required/)
         end
 
-        it 'raises ArgumentError for invalid type' do
+        it 'raises ClientError for invalid type' do
             expect { service.upcoming('invalid_type') }
-                .to raise_error(ArgumentError, /Invalid type/)
+                .to raise_error(TmdbService::ClientError, /Invalid type/)
         end
 
         it 'uses Cache::Store.fetch with correct key and ttl' do

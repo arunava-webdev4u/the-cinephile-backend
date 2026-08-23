@@ -40,7 +40,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "returns proper error message" do
                     post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "secret123" } }.to_json, headers: headers
 
-                    expect(JSON.parse(response.body)["error"]).to eq("email or password is incorrect")
+                    expect(JSON.parse(response.body)["detail"]).to eq("Authentication failed")
                 end
             end
 
@@ -54,7 +54,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "returns proper error message" do
                     post "/api/v1/auth/login", params: { user: { email: user.email, password: "abcd1234" } }.to_json, headers: headers
 
-                    expect(JSON.parse(response.body)["error"]).to eq("email or password is incorrect")
+                    expect(JSON.parse(response.body)["detail"]).to eq("Authentication failed")
                 end
             end
 
@@ -68,7 +68,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "returns proper error message" do
                     post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "abcd1234" } }.to_json, headers: headers
 
-                    expect(JSON.parse(response.body)["error"]).to eq("email or password is incorrect")
+                    expect(JSON.parse(response.body)["detail"]).to eq("Authentication failed")
                 end
             end
         end
@@ -131,8 +131,8 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 params[:user][:confirm_password] = "2222"
                 post "/api/v1/auth/register", params: params.to_json, headers: headers
 
-                expect(response).to have_http_status(:unprocessable_entity)
-                expect(JSON.parse(response.body)["error"]).to eq("passwords don't match")
+                expect(response).to have_http_status(:bad_request)
+                expect(JSON.parse(response.body)["detail"]).to eq("Confirmation does not match")
             end
 
             context "when user already exists" do
@@ -147,8 +147,8 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                         post "/api/v1/auth/register", params: params.to_json, headers: headers
 
-                        expect(response).to have_http_status(:unprocessable_entity)
-                        expect(JSON.parse(response.body)["error"]).to eq("Account already exists and is verified")
+                        expect(response).to have_http_status(:bad_request)
+                        expect(JSON.parse(response.body)["detail"]).to eq("Account already exists")
                     end
 
                   # it "should send email" do
@@ -213,8 +213,8 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when password is missing" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].except(:password) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
-                    expect(JSON.parse(response.body)["error"]).to include("passwords don't match")
+                    expect(response).to have_http_status(:bad_request)
+                    expect(JSON.parse(response.body)["detail"]).to eq("Confirmation does not match")
                 end
 
                 it "fails when first_name is missing" do
@@ -389,24 +389,24 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 otp = (verification.otp_code.to_i + 1).to_s
                 post "/api/v1/auth/verify_email", params: { email: user.email, otp: otp }.to_json, headers: headers
 
-                expect(response).to have_http_status(:unprocessable_entity)
-                expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
+                expect(response).to have_http_status(:bad_request)
+                expect(JSON.parse(response.body)["detail"]).to include("Invalid or expired code")
             end
 
             it "rejects expired OTP" do
                 verification = create(:user_verification, user: user, otp_expires_at: 15.minutes.ago)
                 post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
 
-                expect(response).to have_http_status(:unprocessable_entity)
-                expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
+                expect(response).to have_http_status(:bad_request)
+                expect(JSON.parse(response.body)["detail"]).to include("Invalid or expired code")
             end
 
             it "rejects already verified emails" do
                 verification.update!(verified: true)
                 post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
 
-                expect(response).to have_http_status(:unprocessable_entity)
-                expect(JSON.parse(response.body)["error"]).to include("Already verified")
+                expect(response).to have_http_status(:bad_request)
+                expect(JSON.parse(response.body)["detail"]).to include("Already verified")
             end
 
             it "sends welcome email in production environment" do
@@ -430,28 +430,28 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 post "/api/v1/auth/verify_email", params: { otp: verification.otp_code }.to_json, headers: headers
 
                 expect(response).to have_http_status(:not_found)
-                expect(JSON.parse(response.body)["error"]).to include("Account not found")
+                expect(JSON.parse(response.body)["title"]).to eq("Not Found")
             end
 
             it "regects without otp" do
                 post "/api/v1/auth/verify_email", params: { email: user.email }.to_json, headers: headers
 
-                expect(response).to have_http_status(:unprocessable_entity)
-                expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
+                expect(response).to have_http_status(:bad_request)
+                expect(JSON.parse(response.body)["detail"]).to include("Invalid or expired code")
             end
 
             it "rejects invalid email" do
                 post "/api/v1/auth/verify_email", params: { email: "ax4!%5&g.@gmail.com", otp: verification.otp_code }.to_json, headers: headers
 
                 expect(response).to have_http_status(:not_found)
-                expect(JSON.parse(response.body)["error"]).to include("Account not found")
+                expect(JSON.parse(response.body)["title"]).to eq("Not Found")
             end
 
             it "rejects invalid otp" do
                 post "/api/v1/auth/verify_email", params: { email: user.email, otp: "#2f6f3" }.to_json, headers: headers
 
-                expect(response).to have_http_status(:unprocessable_entity)
-                expect(JSON.parse(response.body)["error"]).to include("Invalid or expired OTP")
+                expect(response).to have_http_status(:bad_request)
+                expect(JSON.parse(response.body)["detail"]).to include("Invalid or expired code")
             end
         end
     end

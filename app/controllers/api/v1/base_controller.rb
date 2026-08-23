@@ -3,6 +3,6 @@ class Api::V1::BaseController < Api::V1::ApplicationController
 
     private
     def set_default_format
-    request.format = :json if request.format.html?
+        request.format = :json if request.format.html?
     end
 end

@@ -1,4 +1,5 @@
-class Api::V1::ListsController < Api::V1::ApplicationController
+# app/controllers/api/v1/lists_controller.rb
+class Api::V1::ListsController < Api::V1::BaseController
     before_action :filter_request
 
     def index
@@ -7,55 +8,37 @@ class Api::V1::ListsController < Api::V1::ApplicationController
     end
 
     def show
-        @list = List.where(id: params[:id], type: params[:type], user_id: @current_user.id)
-        render json: @list.last, status: :ok
+        @list = List.find_by!(id: params[:id], type: params[:type], user_id: @current_user.id)
+        render json: @list, status: :ok
     end
 
     def create
-        @list = CustomList.new({ user: @current_user, **list_params })
-
-        if @list.save
-            render json: @list, status: :created
-        else
-            render json: { errors: @list.errors }, status: :unprocessable_entity
-        end
+        @list = CustomList.create!({ user: @current_user, **list_params })
+        render json: @list, status: :created
     end
 
     def update
-        @list = CustomList.find_by(id: params[:id], user_id: @current_user.id)
-
-        unless @list
-            return render json: { error: "List not found" }, status: :not_found
-        end
-
-        if @list.update(list_params)
-            render json: @list, status: :ok
-        else
-            render json: { errors: @list.errors }, status: :unprocessable_entity
-        end
+        @list = CustomList.find_by!(id: params[:id], user_id: @current_user.id)
+        @list.update!(list_params)
+        render json: @list, status: :ok
     end
 
     def destroy
-        @list = CustomList.find_by(id: params[:id], user_id: @current_user.id)
-
-        unless @list
-            return render json: { error: "List not found" }, status: :not_found
-        end
-
-        if @list.destroy
-            render json: { message: "List deleted successfully" }, status: :ok
-        else
-            render json: { errors: @list.errors }, status: :unprocessable_entity
-        end
+        @list = CustomList.find_by!(id: params[:id], user_id: @current_user.id)
+        @list.destroy!
+        render json: { message: "List deleted successfully" }, status: :ok
     end
 
     private
+
     def list_params
         params.require(:list).permit(:name, :description, :private)
     end
 
     def filter_request
-        render json: { message: "#{action_name} action is not allowed for #{list_type}" } unless get_permissions.include?(action_name.to_sym)
+        unless get_permissions.include?(action_name.to_sym)
+            raise Errors::ForbiddenError.new("#{action_name} is not allowed for #{list_type}")
+        end
     end
 
     def list_type
