@@ -35,7 +35,7 @@ module ExceptionHandler
     # 3. Custom application errors (BadRequestError, etc.)
     rescue_from Errors::ApplicationError do |error|
       render_problem(
-        title:  error.class.name.delete_suffix("Error").titleize,
+        title:  error.class.name.demodulize.delete_suffix("Error").titleize,
         status: error.status,
         detail: ErrorSanitizer.sanitize(error, safe: true)
       )
