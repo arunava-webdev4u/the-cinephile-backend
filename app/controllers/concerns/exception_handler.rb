@@ -120,7 +120,7 @@ module ExceptionHandler
       instance: request.original_url
     }
     body.merge!(extensions) if extensions.present?
-    
+
     render json: body, status: status, content_type: "application/problem+json"
   end
 end

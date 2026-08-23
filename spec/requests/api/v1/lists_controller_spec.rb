@@ -60,11 +60,11 @@ RSpec.describe "Api::V1::ListsController", type: :request do
         expect(JSON.parse(response.body)["id"]).to eq(sample_default_lists.first.id)
       end
 
-      it "returns a nil default list does not exist" do
+      it "returns not_found when the default list does not exist" do
         get "/api/v1/default_list/99999", headers: headers
 
-        expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)).to be_nil
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)["title"]).to eq("Not Found")
       end
     end
 
@@ -156,12 +156,12 @@ RSpec.describe "Api::V1::ListsController", type: :request do
         expect(JSON.parse(response.body)["id"]).to eq(sample_custom_lists.first.id)
       end
 
-      it "returns nil if the list belongs to another user" do
+      it "returns not_found if the list belongs to another user" do
         other_list = FactoryBot.create(:custom_list, user_id: other_user.id)
         get "/api/v1/custom_list/#{other_list.id}", headers: headers
 
-        expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)).to be_nil
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)["title"]).to eq("Not Found")
       end
     end
 
