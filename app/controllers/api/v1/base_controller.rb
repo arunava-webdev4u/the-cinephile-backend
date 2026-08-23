@@ -1,5 +1,4 @@
 class Api::V1::BaseController < Api::V1::ApplicationController
-    include ExceptionHandler
     before_action :set_default_format
 
     private

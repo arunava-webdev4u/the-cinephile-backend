@@ -3,75 +3,93 @@ module ExceptionHandler
   extend ActiveSupport::Concern
 
   included do
-    # 1. TMDB catch-all (base TmdbError) — registered FIRST so it is matched LAST.
-    #    Rails searches rescue_from handlers in reverse registration order, so
-    #    more specific subclasses (ClientError, NotFoundError, etc.) below will
-    #    win over this catch-all.
+    # IMPORTANT: Rails matches rescue_from handlers in REVERSE registration order
+    # (last registered wins). Handlers must therefore be registered from the MOST
+    # GENERAL class to the MOST SPECIFIC one.
+
+    def local_request?
+      Rails.application.config.consider_all_requests_local
+    end
+
+    # 1. CATCH-ALL: Everything else (RuntimeError, NoMethodError, DB errors, etc.)
+    rescue_from StandardError do |error|
+      Rails.logger.error "#{error.class}: #{error.message}\n#{error.backtrace&.first(5)&.join("\n")}"
+
+      render_problem(
+        title:  "Internal Server Error",
+        status: 500,
+        detail: ErrorSanitizer.sanitize(error, safe: false, local_request: local_request?)
+      )
+    end
+
+    # 2. TMDB base error → 503 (catch-all for ServerError and unexpected TMDB issues)
     rescue_from TmdbService::TmdbError do |error|
       Rails.logger.error "TMDB API error: #{error.message}"
-      render json: {
-        type:     "about:blank",
-        title:    "Service Unavailable",
-        status:   503,
-        detail:   "External service unavailable: #{error.message}",
-        instance: request.original_url
-      }, status: 503, content_type: "application/problem+json"
+      render_problem(
+        title:  "Service Unavailable",
+        status: 503,
+        detail: "External service unavailable: #{ErrorSanitizer.sanitize(error, safe: true)}"
+      )
     end
 
-    # 2. Our custom application errors (BadRequestError, etc.)
+    # 3. Custom application errors (BadRequestError, etc.)
     rescue_from Errors::ApplicationError do |error|
-      render json: {
-        type:     "about:blank",
-        title:    error.class.name.delete_suffix("Error").titleize,
-        status:   error.status,
-        detail:   error.message,
-        instance: request.original_url
-      }, status: error.status, content_type: "application/problem+json"
+      render_problem(
+        title:  error.class.name.delete_suffix("Error").titleize,
+        status: error.status,
+        detail: ErrorSanitizer.sanitize(error, safe: true)
+      )
     end
 
-    # 2. TMDB client error (bad type, invalid params) → 400
+    # 4. TMDB client error (bad type, invalid params) → 400
     rescue_from TmdbService::ClientError do |error|
-      render json: {
-        type:     "about:blank",
-        title:    "Bad Request",
-        status:   400,
-        detail:   error.message,
-        instance: request.original_url
-      }, status: 400, content_type: "application/problem+json"
+      render_problem(
+        title:  "Bad Request",
+        status: 400,
+        detail: ErrorSanitizer.sanitize(error, safe: true)
+      )
     end
 
-    # 3. TMDB not found (valid request, but no results) → 404
+    # 5. TMDB not found (valid request, no results) → 404
     rescue_from TmdbService::NotFoundError do |error|
-      render json: {
-        type:     "about:blank",
-        title:    "Not Found",
-        status:   404,
-        detail:   error.message,
-        instance: request.original_url
-      }, status: 404, content_type: "application/problem+json"
+      render_problem(
+        title:  "Not Found",
+        status: 404,
+        detail: ErrorSanitizer.sanitize(error, safe: true)
+      )
     end
 
-    # 5. TMDB rate limit → 429
+    # 6. TMDB rate limit → 429
     rescue_from TmdbService::RateLimitError do |error|
-      render json: {
-        type:     "about:blank",
-        title:    "Too Many Requests",
-        status:   429,
-        detail:   error.message,
-        instance: request.original_url
-      }, status: 429, content_type: "application/problem+json"
+      render_problem(
+        title:  "Too Many Requests",
+        status: 429,
+        detail: ErrorSanitizer.sanitize(error, safe: true)
+      )
     end
 
-    # 6. TMDB server down / network issues → 503
+    # 7. TMDB server down → 503
     rescue_from TmdbService::ServerError do |error|
       Rails.logger.error "TMDB API error: #{error.message}"
-      render json: {
-        type:     "about:blank",
-        title:    "Service Unavailable",
-        status:   503,
-        detail:   "External service unavailable: #{error.message}",
-        instance: request.original_url
-      }, status: 503, content_type: "application/problem+json"
+      render_problem(
+        title:  "Service Unavailable",
+        status: 503,
+        detail: "External service unavailable: #{ErrorSanitizer.sanitize(error, safe: true)}"
+      )
     end
+  end
+
+  private
+
+  # Single place that shapes the RFC 9457 problem+json response.
+  # When DTOs are introduced, this is the method to swap out.
+  def render_problem(title:, status:, detail:)
+    render json: {
+      type:     "about:blank",
+      title:    title,
+      status:   status,
+      detail:   detail,
+      instance: request.original_url
+    }, status: status, content_type: "application/problem+json"
   end
 end
