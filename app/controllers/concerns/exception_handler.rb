@@ -77,19 +77,50 @@ module ExceptionHandler
         detail: "External service unavailable: #{ErrorSanitizer.sanitize(error, safe: true)}"
       )
     end
+
+    # 8. Missing required param (e.g., params.require(:user) when :user is absent)
+    rescue_from ActionController::ParameterMissing do |error|
+      render_problem(
+        title:  "Bad Request",
+        status: 400,
+        detail: "Missing required parameter: #{error.param}"
+      )
+    end
+
+    # 9. Record not found (e.g., User.find_by! with no match)
+    rescue_from ActiveRecord::RecordNotFound do |error|
+      render_problem(
+        title:  "Not Found",
+        status: 404,
+        detail: ErrorSanitizer.sanitize(error, safe: true)
+      )
+    end
+
+    # 10. Validation failed (e.g., user.save! with invalid data)
+    rescue_from ActiveRecord::RecordInvalid do |error|
+      render_problem(
+        title:  "Validation Failed",
+        status: 422,
+        detail: ErrorSanitizer.sanitize(error, safe: true),
+        extensions: { errors: error.record.errors.to_hash }
+      )
+    end
   end
 
   private
 
   # Single place that shapes the RFC 9457 problem+json response.
   # When DTOs are introduced, this is the method to swap out.
-  def render_problem(title:, status:, detail:)
-    render json: {
+  def render_problem(title:, status:, detail:, extensions: {})
+    body = {
       type:     "about:blank",
       title:    title,
       status:   status,
       detail:   detail,
       instance: request.original_url
-    }, status: status, content_type: "application/problem+json"
+    }
+    body.merge!(extensions) if extensions.present?
+    
+    render json: body, status: status, content_type: "application/problem+json"
   end
 end

@@ -38,6 +38,8 @@ module ErrorSanitizer
     #   (Rails.application.config.consider_all_requests_local). Local requests
     #   see real messages even for unexpected errors, to aid debugging.
     def sanitize(error, safe:, local_request: false)
+      # Unsafe-pattern check runs FIRST (defense-in-depth): even "safe"
+      # intentional errors must never leak secrets, SQL, or file paths.
       return GENERIC_DETAIL if contains_unsafe?(error.message)
 
       return error.message if safe || local_request
