@@ -28,13 +28,15 @@ speStructure
 - `app/controllers/api/v1/` - RESTful endpoints
 - `app/models/` - Business logic & DB
 - `app/serializers/` - JSON responses
-- `app/services/` - TMDB, Gmail integrations
+- `app/services/` - TMDB, Gmail integrations, ErrorSanitizer
 - `app/workers/` - Sidekiq background jobs
 - `spec/` - RSpec tests (mirrors app/)
 - `lib/auth/` - JWT token logic
 - `db/migrate/` - Schema migrations
 
-## Architectureequests at versioned endpoints
+## Architecture
+
+- Versioned API requests at versioned endpoints
 - RESTful resource actions (index, show, create, update, destroy)
 - Authenticate with JWT tokens via `authenticable` concern
 - Authorize user access to resources
@@ -48,11 +50,17 @@ speStructure
 
 ### Supporting Components
 
+**Error Handling** (`app/controllers/concerns/exception_handler.rb` + `app/services/error_sanitizer.rb` + `app/controllers/errors/`)
+- Global RFC 9457 problem+json error responses — see **docs/error_handling.md**
+- Controllers raise exceptions; never render error hashes
+- `rescue_from` order matters: general → specific (Rails matches in reverse)
+
 **Services** (`app/services`)
 - Encapsulate external integrations
 - Examples:
   - `TmdbService` - Fetches movie/TV data from The Movie Database API
   - `SmtpGmailService` - Sends emails via Gmail SMTP
+  - `ErrorSanitizer` - Masks unsafe error messages before exposing to clients
 - Implement complex business logic not suited for models/controllers
 - Return structured result objects
 
@@ -145,32 +153,40 @@ GET (multiple resources):
 [
   { "id": 1, "name": "List 1" },
   { "id": 2, "name": "List 2" }
-]JWT Authentication
-
-Token payload: `user_id`, `email`, `jti` (JWT ID for revocation)
-
-**Login**: POST `/api/v1/login` → returns token
-**Request**: Include `Authorization: Bearer <token>` header
-**Logout**: DELETE `/api/v1/logout` → invalidates token by updating user's `jti`
-  "error": "Invalid credentials"
-}
+]
 ```
 
-Authorization error (403 Forbidden):
+### Error Responses (RFC 9457 problem+json)
+
+All errors are handled globally by `ExceptionHandler` and rendered as
+problem+json. Controllers raise; they never render error hashes themselves.
+See **docs/error_handling.md** for full details.
+
 ```json
 {
-  "error": "Not authorized to access this resource"
+  "type":     "about:blank",
+  "title":    "Not Found",
+  "status":   404,
+  "detail":   "Couldn't find List with 'id'=999",
+  "instance": "http://example.com/api/v1/custom_list/999"
 }
 ```
 
-Not found (404 Not Found):
-```json
-{
-  "error": "Resource not found"
-}
-```
+| Status | Trigger |
+|--------|---------|
+| 400 | `Errors::BadRequestError`, `TmdbService::ClientError`, missing params |
+| 401 | `Errors::UnauthorizedError` (e.g. failed login) |
+| 403 | `Errors::ForbiddenError` (action not allowed) |
+| 404 | `Errors::NotFoundError`, `ActiveRecord::RecordNotFound` |
+| 422 | `ActiveRecord::RecordInvalid` (+ `errors` field extensions) |
+| 429 | `TmdbService::RateLimitError` |
+| 503 | TMDB down (`ServerError` / base `TmdbError`) |
+| 500 | Anything else (masked as "Internal server error" in production) |
 
-## Code Style Guidelines
+**Validation errors (422)** include field-level messages under `errors`.
+Messages containing secrets/tokens/SQL are masked by `ErrorSanitizer`.
+
+## JWT Authentication
 
 ### Rails Conventions
 - Class names: `CamelCase` (e.g., `UserController`, `UserSerializer`)
@@ -180,13 +196,12 @@ Not found (404 Not Found):
 
 ### Validations
 ```ruby
-class User < Aps
+class User < ApplicationRecord
+  validates :email, presence: true, uniqueness: true
+end
+```
 
-**Success**: Resource JSON or array of resources
-**Validation errors (422)**: `{"errors": {"field": ["message"]}}`
-**Auth errors (401)**: `{"error": "message"}`
-**Authorization (403)**: `{"error": "Not authorized"}`
-**Not found (404)**: `{"error": "Resource not found"}# RSpec Structure
+## RSpec Structure
 ```ruby
 describe User do
   describe "validations" do
@@ -271,8 +286,8 @@ nventions
 Known Issues
 
 1. **ListItem validations** - Missing validations cause DB errors (BUG_REPORT_LIST_ITEMS_CONTROLLER.md)
-2. **ListItemsController authorization** - No authorization checks
-3. **Error response inconsistency** - Some endpoints return different error formats
+2. ~~**ListItemsController authorization** - No authorization checks~~ (fixed: scoped `find_by!` + `Errors::ForbiddenError`)
+3. ~~**Error response inconsistency** - Some endpoints return different error formats~~ (fixed: global RFC 9457 problem+json via ExceptionHandler)
 
 ## Environment Setup
 

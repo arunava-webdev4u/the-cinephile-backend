@@ -5,6 +5,6 @@ FactoryBot.define do
     email { Faker::Internet.unique.email }
     country { 356 } # India
     date_of_birth { 25.years.ago }
-    password { "Password123!" }
+    password { "Password123_" }
   end
 end

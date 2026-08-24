@@ -134,9 +134,149 @@ RSpec.describe User, type: :model do
     end
 
     # ###############################33
-    # context "password validations" do
-    # will implement in future
-    # end
+    context "password validations" do
+      it 'is required' do
+        user.password = nil
+        user.password_digest = nil
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("can't be blank")
+      end
+
+      it 'is not required when updating other attributes (existing digest present)' do
+        user.save!
+        reloaded = User.find(user.id)
+        reloaded.first_name = "Jane"
+
+        expect(reloaded).to be_valid
+      end
+
+      it 'rejects passwords shorter than 8 characters' do
+        user.password = "Ab1x"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("is too short (minimum is 8 characters)")
+      end
+
+      it 'accepts passwords of exactly 8 characters' do
+        user.password = "Abcdefg1"
+        expect(user).to be_valid
+      end
+
+      it 'rejects passwords longer than 128 characters' do
+        user.password = "Ab1" + ("x" * 126)
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("is too long (maximum is 128 characters)")
+      end
+
+      it 'rejects passwords without an uppercase letter' do
+        user.password = "lowercase123"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("must contain at least one uppercase letter")
+      end
+
+      it 'rejects passwords without a lowercase letter' do
+        user.password = "UPPERCASE123"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("must contain at least one lowercase letter")
+      end
+
+      it 'rejects passwords without a digit' do
+        user.password = "NoDigitsHere"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("must contain at least one digit")
+      end
+
+      it 'reports each missing requirement separately' do
+        user.password = "alllowercase"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("must contain at least one uppercase letter")
+        expect(user.errors[:password]).to include("must contain at least one digit")
+        expect(user.errors[:password]).not_to include("must contain at least one lowercase letter")
+      end
+
+      it 'accepts a strong password with allowed special characters' do
+        user.password = "Str0ng-P@ss"
+        expect(user).to be_valid
+      end
+
+      it 'accepts passwords with all allowed special characters (- _ $ # @)' do
+        user.password = "Abcdef1-_$#@"
+        expect(user).to be_valid
+      end
+
+      it 'accepts passphrases containing spaces' do
+        user.password = "Correct Horse Battery Staple 42"
+        expect(user).to be_valid
+      end
+
+      it 'rejects special characters outside the allow-list (e.g. !)' do
+        user.password = "Abcdef1!x"
+        expect(user).not_to be_valid
+        expect(user.errors[:password].first).to include("characters that are not allowed: !")
+        expect(user.errors[:password].first).to include(User::ALLOWED_PASSWORD_SPECIALS.strip)
+      end
+
+      it 'rejects unicode characters (outside the allow-list)' do
+        user.password = "Pässw0rd"
+        expect(user).not_to be_valid
+        expect(user.errors[:password].first).to include("characters that are not allowed")
+      end
+
+      it 'reports each disallowed character in the error message' do
+        user.password = "Abcdef1&%^"
+        expect(user).not_to be_valid
+        message = user.errors[:password].first
+        expect(message).to include("&")
+        expect(message).to include("%")
+        expect(message).to include("^")
+      end
+
+      it 'rejects passwords containing control characters (e.g. newline)' do
+        user.password = "Abcdef1\n"
+        expect(user).not_to be_valid
+        expect(user.errors[:password].first).to include("characters that are not allowed")
+      end
+
+      it 'rejects passwords containing a tab character' do
+        user.password = "Abcdef1\tX"
+        expect(user).not_to be_valid
+        expect(user.errors[:password].first).to include("characters that are not allowed")
+      end
+
+      it 'exposes the allowed-characters guidance in the validation message' do
+        user.password = "Abcdef1\n"
+        user.valid?
+        expect(user.errors[:password].first).to include("@#$-_")
+      end
+
+      it 'does NOT require a special character (only upper, lower, digit)' do
+        user.password = "Abcdefg1"
+        user.valid?
+        expect(user.errors[:password]).not_to include(/special/)
+      end
+
+      it 'rejects when an unsupported control char is mixed with supported special chars' do
+        user.password = "Ab1_x$\n#@"
+        expect(user).not_to be_valid
+        expect(user.errors[:password].first).to include("characters that are not allowed")
+      end
+
+      it 'rejects passwords containing a null byte' do
+        user.password = "Abcdef1%00"
+        # Ruby strings cannot contain literal null bytes via \x00 in some
+        # contexts; simulate the control char with an escape sequence instead.
+        user.password = "Abcdef1\u0000"
+        expect(user).not_to be_valid
+      rescue ArgumentError
+        # Rails/bcrypt rejects null bytes at assignment — also acceptable behavior
+        expect(true).to be true
+      end
+
+      it 'rejects unicode letters outside the allow-list' do
+        user.password = "Pässw0rd"
+        expect(user).not_to be_valid
+        expect(user.errors[:password].first).to include("characters that are not allowed")
+      end
+    end
 
     context 'date_of_birth validations' do
       it 'is not valid without a date_of_birth' do

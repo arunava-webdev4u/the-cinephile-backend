@@ -13,17 +13,17 @@ RSpec.describe "Api::V1::AuthController", type: :request do
     end
 
     describe "POST /api/v1/auth/login" do
-        let!(:user) { create(:user, password: "secret123", password_confirmation: "secret123") }
+        let!(:user) { create(:user, password: "Secret123", password_confirmation: "Secret123") }
 
         context "with valid credentials" do
             it "returns status ok" do
-                post "/api/v1/auth/login", params: { user: { email: user.email, password: "secret123" } }.to_json, headers: headers
+                post "/api/v1/auth/login", params: { user: { email: user.email, password: "Secret123" } }.to_json, headers: headers
 
                 expect(response).to have_http_status(:ok)
             end
 
             it "returns a JWT token and user" do
-                post "/api/v1/auth/login", params: { user: { email: user.email, password: "secret123" } }.to_json, headers: headers
+                post "/api/v1/auth/login", params: { user: { email: user.email, password: "Secret123" } }.to_json, headers: headers
 
                 expect(JSON.parse(response.body)).to include("token", "user")
             end
@@ -32,13 +32,13 @@ RSpec.describe "Api::V1::AuthController", type: :request do
         context "with invalid credentials" do
             context "when email is incorrect" do
                 it "returns unauthorized status" do
-                    post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "secret123" } }.to_json, headers: headers
+                    post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "Secret123" } }.to_json, headers: headers
 
                     expect(response).to have_http_status(:unauthorized)
                 end
 
                 it "returns proper error message" do
-                    post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "secret123" } }.to_json, headers: headers
+                    post "/api/v1/auth/login", params: { user: { email: "abc@gmail.com", password: "Secret123" } }.to_json, headers: headers
 
                     expect(JSON.parse(response.body)["detail"]).to eq("Authentication failed")
                 end
@@ -78,8 +78,8 @@ RSpec.describe "Api::V1::AuthController", type: :request do
         register_params = {
             user: {
                 email: "johndoe+#{SecureRandom.hex(4)}@gmail.com",
-                password: "1111",
-                confirm_password: "1111",
+                password: "Password111",
+                confirm_password: "Password111",
                 first_name: "john",
                 last_name: "doe",
                 country: 356,
@@ -193,8 +193,8 @@ RSpec.describe "Api::V1::AuthController", type: :request do
             register_params = {
                 user: {
                     email: "benten@gmail.com",
-                    password: "1111",
-                    confirm_password: "1111",
+                    password: "Password111",
+                    confirm_password: "Password111",
                     first_name: "ben",
                     last_name: "ten",
                     country: 248,
@@ -275,9 +275,53 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 end
             end
 
-            # context "for password" do
-            # password validations will be included later
-            # end
+            context "for password" do
+                it "fails when password is too short" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(password: "Ab1x", confirm_password: "Ab1x") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["password"]).to include("is too short (minimum is 8 characters)")
+                end
+
+                it "fails when password has no uppercase letter" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(password: "lowercase123", confirm_password: "lowercase123") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["password"]).to include(
+                        "must contain at least one uppercase letter"
+                    )
+                end
+
+                it "fails when password has no lowercase letter" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(password: "UPPERCASE123", confirm_password: "UPPERCASE123") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["password"]).to include(
+                        "must contain at least one lowercase letter"
+                    )
+                end
+
+                it "fails when password has no digit" do
+                    post "/api/v1/auth/register", params: { user: register_params[:user].merge(password: "NoDigitsHere", confirm_password: "NoDigitsHere") }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(JSON.parse(response.body)["errors"]["password"]).to include(
+                        "must contain at least one digit"
+                    )
+                end
+
+                it "succeeds with a strong password" do
+                    params = register_params.deep_dup
+                    params[:user][:password] = "Str0ng-P@ss"
+                    params[:user][:confirm_password] = "Str0ng-P@ss"
+
+                    expect {
+                        post "/api/v1/auth/register", params: params.to_json, headers: headers
+                    }.to change(User, :count).by(1)
+
+                    expect(response).to have_http_status(:created)
+                end
+            end
 
             context "for first_name" do
                 it "fails when not a string" do

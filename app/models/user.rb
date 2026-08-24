@@ -26,6 +26,48 @@ class User < ApplicationRecord
         numericality: { only_integer: true, greater_than: 0 },
         inclusion: { in: self::VALID_COUNTRY_NUMERIC_CODES, message: "is not a recognized country" }
 
+    # Password policy:
+    #   - required only when setting/changing the password (password_digest blank
+    #     means an existing password is untouched, e.g. profile updates)
+    #   - 8..128 characters (128 = bcrypt input limit safety)
+    #   - at least one uppercase letter, one lowercase letter and one digit
+    #   - STRICT allow-list of special characters: @ # $ - _ and space.
+    #     Any other character (e.g. & % ^ * ! ? < > / \ " ') is rejected.
+    #
+    # Each rule reports its OWN specific error message so users get precise
+    # feedback instead of one giant combined message.
+    # NOTE: single-quoted! In double quotes, "#$" would be parsed as
+    # interpolation of the global variable $-_ (empty), silently yielding "@".
+    ALLOWED_PASSWORD_SPECIALS = '@#$-_ '
+
+    validates :password,
+        presence: true,
+        length: { minimum: 8, maximum: 128 },
+        if: -> { password_digest.blank? || password.present? }
+
+    validate :validate_password_complexity
+
+    def validate_password_complexity
+        return if password.blank?
+        return unless password.length.between?(8, 128)
+
+        # Escape each special char individually; escaping the joined string
+        # would create unintended ranges (e.g. "$-_") inside the char class.
+        escaped_specials = ALLOWED_PASSWORD_SPECIALS.each_char.map { |c| Regexp.escape(c) }.join
+        allowed = /\A[A-Za-z0-9#{escaped_specials}]+\z/
+        disallowed_chars = password.chars.reject { |c| c.match?(allowed) }
+
+        if disallowed_chars.any?
+            errors.add(:password, "contains characters that are not allowed: " \
+                "#{disallowed_chars.uniq.join(' ')}. Allowed special characters are: #{ALLOWED_PASSWORD_SPECIALS.strip}")
+            return
+        end
+
+        errors.add(:password, "must contain at least one uppercase letter") unless password.match?(/[A-Z]/)
+        errors.add(:password, "must contain at least one lowercase letter") unless password.match?(/[a-z]/)
+        errors.add(:password, "must contain at least one digit") unless password.match?(/\d/)
+    end
+
     validate :validate_date_of_birth
 
     def as_json(options = {})
