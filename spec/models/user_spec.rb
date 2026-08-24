@@ -134,9 +134,73 @@ RSpec.describe User, type: :model do
     end
 
     # ###############################33
-    # context "password validations" do
-    # will implement in future
-    # end
+    context "password validations" do
+      it 'is required' do
+        user.password = nil
+        user.password_digest = nil
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("can't be blank")
+      end
+
+      it 'is not required when updating other attributes (existing digest present)' do
+        user.save!
+        reloaded = User.find(user.id)
+        reloaded.first_name = "Jane"
+
+        expect(reloaded).to be_valid
+      end
+
+      it 'rejects passwords shorter than 8 characters' do
+        user.password = "Ab1x"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("is too short (minimum is 8 characters)")
+      end
+
+      it 'accepts passwords of exactly 8 characters' do
+        user.password = "Abcdefg1"
+        expect(user).to be_valid
+      end
+
+      it 'rejects passwords longer than 128 characters' do
+        user.password = "Ab1" + ("x" * 126)
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include("is too long (maximum is 128 characters)")
+      end
+
+      it 'rejects passwords without an uppercase letter' do
+        user.password = "lowercase123"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include(
+          "must contain at least one uppercase letter, one lowercase letter and one digit"
+        )
+      end
+
+      it 'rejects passwords without a lowercase letter' do
+        user.password = "UPPERCASE123"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include(
+          "must contain at least one uppercase letter, one lowercase letter and one digit"
+        )
+      end
+
+      it 'rejects passwords without a digit' do
+        user.password = "NoDigitsHere"
+        expect(user).not_to be_valid
+        expect(user.errors[:password]).to include(
+          "must contain at least one uppercase letter, one lowercase letter and one digit"
+        )
+      end
+
+      it 'accepts a strong password with special characters' do
+        user.password = "Str0ng!Pass"
+        expect(user).to be_valid
+      end
+
+      it 'accepts unicode letters as satisfying case requirements' do
+        user.password = "Pässw0rd"
+        expect(user).to be_valid
+      end
+    end
 
     context 'date_of_birth validations' do
       it 'is not valid without a date_of_birth' do

@@ -26,6 +26,20 @@ class User < ApplicationRecord
         numericality: { only_integer: true, greater_than: 0 },
         inclusion: { in: self::VALID_COUNTRY_NUMERIC_CODES, message: "is not a recognized country" }
 
+    # Password policy:
+    #   - required only when setting/changing the password (password_digest blank
+    #     means an existing password is untouched, e.g. profile updates)
+    #   - 8..128 characters (128 = bcrypt input limit safety)
+    #   - at least one uppercase letter, one lowercase letter and one digit
+    validates :password,
+        presence: true,
+        length: { minimum: 8, maximum: 128 },
+        format: {
+            with: /\A(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+\z/,
+            message: "must contain at least one uppercase letter, one lowercase letter and one digit"
+        },
+        if: -> { password_digest.blank? || password.present? }
+
     validate :validate_date_of_birth
 
     def as_json(options = {})
