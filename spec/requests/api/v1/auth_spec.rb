@@ -288,7 +288,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                     expect(response).to have_http_status(:unprocessable_entity)
                     expect(JSON.parse(response.body)["errors"]["password"]).to include(
-                        "must contain at least one uppercase letter, one lowercase letter and one digit"
+                        "must contain at least one uppercase letter"
                     )
                 end
 
@@ -297,7 +297,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                     expect(response).to have_http_status(:unprocessable_entity)
                     expect(JSON.parse(response.body)["errors"]["password"]).to include(
-                        "must contain at least one uppercase letter, one lowercase letter and one digit"
+                        "must contain at least one lowercase letter"
                     )
                 end
 
@@ -306,14 +306,14 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                     expect(response).to have_http_status(:unprocessable_entity)
                     expect(JSON.parse(response.body)["errors"]["password"]).to include(
-                        "must contain at least one uppercase letter, one lowercase letter and one digit"
+                        "must contain at least one digit"
                     )
                 end
 
                 it "succeeds with a strong password" do
                     params = register_params.deep_dup
-                    params[:user][:password] = "Str0ng!Pass"
-                    params[:user][:confirm_password] = "Str0ng!Pass"
+                    params[:user][:password] = "Str0ng-P@ss"
+                    params[:user][:confirm_password] = "Str0ng-P@ss"
 
                     expect {
                         post "/api/v1/auth/register", params: params.to_json, headers: headers
