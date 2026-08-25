@@ -30,8 +30,11 @@ class Api::V1::AuthController < Api::V1::BaseController
     verification.assign_attributes(
       otp_code: UserVerification.generate_otp,
       otp_expires_at: 10.minutes.from_now,
-      verified: false,
-      verified_at: nil
+      verified: false
+      # NOTE: verified_at is intentionally NOT reset here. It permanently marks
+      # that this email was verified at some point (used by email_verified?).
+      # Resetting it here would let a /register call during an active password
+      # reset permanently strip the account's verified status.
     )
     verification.save!
 

@@ -24,8 +24,9 @@ class UserVerification < ApplicationRecord
         update!(
         otp_code: self.class.generate_otp,
         otp_expires_at: ttl.from_now,
-        verified: false,
-        verified_at: nil
+        verified: false
+        # NOTE: verified_at is preserved — it records that this account's email
+        # was verified at some point, independent of the current OTP flow.
         )
     end
 

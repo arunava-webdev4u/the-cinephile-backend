@@ -117,15 +117,14 @@ RSpec.describe UserVerification, type: :model do
                 expect(verification.otp_code).not_to eq(old_otp)
                 expect(verification.otp_expires_at).not_to eq(otp_expires_at)
                 expect(verification.verified).to be false
-                expect(verification.verified_at).to be_nil
             end
         end
 
-        it "resets a previously verified record back to unverified" do
+        it "resets a previously verified record back to unverified but preserves verified_at" do
             verification.mark_verified!
             verification.regenerate!(ttl: 5.minutes)
             expect(verification.verified).to be false
-            expect(verification.verified_at).to be_nil
+            expect(verification.verified_at).to be_present
         end
 
         it "sets the new expiry using the given ttl" do

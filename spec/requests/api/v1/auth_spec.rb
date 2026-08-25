@@ -2,6 +2,8 @@ require "rails_helper"
 require "sidekiq/testing"
 
 RSpec.describe "Api::V1::AuthController", type: :request do
+    include ActiveSupport::Testing::TimeHelpers
+
     let(:headers) { { "CONTENT_TYPE" => "application/json" } }
 
     before do
@@ -157,7 +159,8 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                 context "and is not verified" do
                     it "will update the record in user_verifications" do
-                        create(:user_verification, user: user, verified: false)
+                        create(:user_verification, :verified, user: user)
+                        user.verification.update!(verified: false) # simulate a pending reset flow
 
                         params = register_params.deep_dup
                         params[:user][:email] = user.email
@@ -166,6 +169,21 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                         expect(response).to have_http_status(:created)
                         expect(JSON.parse(response.body)["message"]).to eq("Please verify your email with the OTP sent")
+                    end
+
+                    it "does not wipe verified_at (permanent email-verification marker)" do
+                        create(:user_verification, :verified, user: user)
+                        user.verification.update!(verified: false) # e.g. a password reset started
+                        original_verified_at = user.verification.verified_at
+                        expect(original_verified_at).to be_present
+
+                        params = register_params.deep_dup
+                        params[:user][:email] = user.email
+
+                        post "/api/v1/auth/register", params: params.to_json, headers: headers
+
+                        expect(user.reload.email_verified?).to be true
+                        expect(user.verification.verified_at).to eq(original_verified_at)
                     end
 
                     it "should regenerate the OTP and otp_expires_at" do
@@ -496,6 +514,106 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                 expect(response).to have_http_status(:bad_request)
                 expect(JSON.parse(response.body)["detail"]).to include("Invalid or expired code")
+            end
+        end
+
+        context "OTP expiry edge cases" do
+            it "rejects an OTP entered exactly at the expiry boundary" do
+                travel_to(1.second.from_now) do
+                    verification.update!(otp_expires_at: Time.current)
+                    post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:bad_request)
+                    expect(JSON.parse(response.body)["detail"]).to include("Invalid or expired code")
+                end
+            end
+
+            it "accepts an OTP one second before expiry" do
+                travel_to(Time.current) do
+                    verification.update!(otp_expires_at: 1.second.from_now)
+                    post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
+
+                    expect(response).to have_http_status(:created)
+                end
+            end
+
+            it "does not verify the account when the OTP is expired (state unchanged)" do
+                verification.update!(otp_expires_at: 15.minutes.ago)
+
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
+
+                expect(verification.reload.verified).to be_falsey
+                expect(user.reload.email_verified?).to be false
+            end
+        end
+
+        context "OTP reuse and cross-flow security" do
+            it "rejects a second verification attempt with the same OTP after success" do
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
+                expect(response).to have_http_status(:created)
+
+                # mark_verified! sets verified=true; the guard rejects re-verification
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
+
+                expect(response).to have_http_status(:bad_request)
+                expect(JSON.parse(response.body)["detail"]).to include("Already verified")
+            end
+
+            it "invalidates the OTP issued before a newer one (old OTP becomes stale)" do
+                old_otp = verification.otp_code
+
+                # user re-registers → OTP regenerated
+                register_params = {
+                    user: {
+                        email: user.email, password: "Regenerate1", confirm_password: "Regenerate1",
+                        first_name: "John", last_name: "Doe", country: 356, date_of_birth: "2000-12-20"
+                    }
+                }
+                post "/api/v1/auth/register", params: register_params.to_json, headers: headers
+                expect(response).to have_http_status(:created)
+
+                new_otp = user.verification.reload.otp_code
+                expect(new_otp).not_to eq(old_otp)
+
+                # old OTP must no longer work
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: old_otp }.to_json, headers: headers
+
+                expect(response).to have_http_status(:bad_request)
+                expect(user.reload.email_verified?).to be false
+            end
+
+            it "verifying with the new OTP does not accept the old one either way around" do
+                old_otp = verification.otp_code
+
+                verification.regenerate!
+                new_otp = verification.reload.otp_code
+
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: new_otp }.to_json, headers: headers
+                expect(response).to have_http_status(:created)
+
+                # old OTP must not work even though the account is now verified
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: old_otp }.to_json, headers: headers
+
+                expect(response).to have_http_status(:bad_request)
+            end
+
+            it "does not leak whether the OTP was wrong vs expired in the message" do
+                verification.update!(otp_expires_at: 15.minutes.ago)
+
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: "000000" }.to_json, headers: headers
+
+                expect(JSON.parse(response.body)["detail"]).to eq("Invalid or expired code")
+            end
+        end
+
+        context "token behavior after verification" do
+            it "returns a token that authenticates the now-verified user" do
+                post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
+
+                token = JSON.parse(response.body)["token"]
+                get "/api/v1/user", headers: headers.merge({ "Authorization" => "Bearer #{token}" })
+
+                expect(response).to have_http_status(:ok)
             end
         end
     end
