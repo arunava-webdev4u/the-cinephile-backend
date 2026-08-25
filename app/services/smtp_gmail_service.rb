@@ -40,22 +40,16 @@ class SmtpGmailService
         end
     end
 
-    # def send_password_reset_email(user, reset_token)
-    #     raise EmailError, "User cannot be nil" if user.nil?
-    #     raise EmailError, "Reset token cannot be blank" if reset_token.blank?
 
-    #     begin
-    #     mail = build_password_reset_email(user, reset_token)
-    #     deliver_email(mail)
+    def send_password_reset_email!(reset_details)
+        validate_configuration!
 
-    #     Rails.logger.info "Password reset email sent successfully to #{user.email}"
-    #     { success: true, message: "Password reset email sent successfully" }
+        mail = build_password_reset_email(reset_details)
+        deliver_email(mail)
 
-    #     rescue => e
-    #     Rails.logger.error "Failed to send password reset email to #{user.email}: #{e.message}"
-    #     handle_email_error(e)
-    #     end
-    # end
+        Rails.logger.info "Password reset email sent successfully to #{reset_details[:email]}"
+        { success: true, message: "Password reset email sent successfully" }
+    end
 
     def send_verification_email(registration_details)
         raise EmailError, "Registration details cannot be nil" if registration_details.nil?
@@ -86,8 +80,6 @@ class SmtpGmailService
 
         Rails.logger.info "Verification email sent successfully to #{registration_details[:email]}"
     end
-
-
 
     def validate_configuration!
         missing_configs = []
@@ -125,28 +117,6 @@ class SmtpGmailService
         mail
     end
 
-    # def build_password_reset_email(user, reset_token)
-    #     reset_url = "#{app_link}/reset-password?token=#{reset_token}"
-
-    #     mail = Mail.new do
-    #     from     ENV['SMTP_GMAIL_APP_USERNAME']
-    #     to       user.email
-    #     subject  "Reset Your Password - #{app_name}"
-
-    #     html_part do
-    #         content_type 'text/html; charset=UTF-8'
-    #         body password_reset_html_template(user, reset_url)
-    #     end
-
-    #     text_part do
-    #         body password_reset_text_template(user, reset_url)
-    #     end
-    #     end
-
-    #     configure_mail_delivery(mail)
-    #     mail
-    # end
-
     def build_verification_email(registration_details)
         html_content = verification_email_html_template(registration_details)
         text_content = verification_email_text_template(registration_details)
@@ -156,6 +126,31 @@ class SmtpGmailService
         mail = Mail.new do
             from     from_email
             to       registration_details[:email]
+            subject  subject_line
+
+            html_part do
+                content_type "text/html; charset=UTF-8"
+                body html_content
+            end
+
+            text_part do
+                body text_content
+            end
+        end
+
+        configure_mail_delivery(mail)
+        mail
+    end
+
+    def build_password_reset_email(reset_details)
+        html_content = password_reset_html_template(reset_details)
+        text_content = password_reset_text_template(reset_details)
+        subject_line = "Reset your password - #{app_name()}"
+        from_email = ENV["SMTP_GMAIL_APP_USERNAME"]
+
+        mail = Mail.new do
+            from     from_email
+            to       reset_details[:email]
             subject  subject_line
 
             html_part do
@@ -299,68 +294,6 @@ class SmtpGmailService
         TEXT
     end
 
-    # def password_reset_html_template(user, reset_url)
-    #     <<~HTML
-    #     <!DOCTYPE html>
-    #     <html>
-    #         <head>
-    #         <meta charset="UTF-8">
-    #         <title>Reset Your Password - #{app_name}</title>
-    #         <style>
-    #             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    #             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    #             .header { background-color: #FF6B6B; color: white; padding: 20px; text-align: center; }
-    #             .content { padding: 20px; background-color: #f9f9f9; }
-    #             .button { display: inline-block; padding: 10px 20px; background-color: #FF6B6B; color: white; text-decoration: none; border-radius: 5px; }
-    #             .footer { margin-top: 20px; padding: 10px; font-size: 12px; color: #666; text-align: center; }
-    #             .warning { background-color: #FFF3CD; border: 1px solid #FFEAA7; padding: 10px; margin: 15px 0; border-radius: 5px; }
-    #         </style>
-    #         </head>
-    #         <body>
-    #         <div class="container">
-    #             <div class="header">
-    #             <h1>Reset Your Password</h1>
-    #             </div>
-    #             <div class="content">
-    #             <h2>Hello #{user.first_name}!</h2>
-    #             <p>You recently requested to reset your password for your #{app_name} account.</p>
-    #             <p>Click the button below to reset your password:</p>
-    #             <p>
-    #                 <a href="#{reset_url}" class="button">Reset Password</a>
-    #             </p>
-    #             <div class="warning">
-    #                 <strong>Important:</strong> This link will expire in 1 hour for security reasons.
-    #             </div>
-    #             <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
-    #             </div>
-    #             <div class="footer">
-    #             <p>© #{Date.current.year} #{app_name}. All rights reserved.</p>
-    #             </div>
-    #         </div>
-    #         </body>
-    #     </html>
-    #     HTML
-    # end
-
-    # def password_reset_text_template(user, reset_url)
-    #     <<~TEXT
-    #     Reset Your Password - #{app_name}
-
-    #     Hello #{user.first_name}!
-
-    #     You recently requested to reset your password for your #{app_name} account.
-
-    #     Click the link below to reset your password:
-    #     #{reset_url}
-
-    #     IMPORTANT: This link will expire in 1 hour for security reasons.
-
-    #     If you didn't request a password reset, please ignore this email. Your password will remain unchanged.
-
-    #     © #{Date.current.year} #{app_name}. All rights reserved.
-    #     TEXT
-    # end
-
     def verification_email_html_template(registration_details)
         <<~HTML
         <!DOCTYPE html>
@@ -408,6 +341,38 @@ class SmtpGmailService
         This is your OTP: #{registration_details[:otp_code]}
 
         If you didn't create an account with us, please ignore this email.
+
+        © #{Date.current.year} #{app_name}. All rights reserved.
+        TEXT
+    end
+
+    def password_reset_html_template(reset_details)
+        <<~HTML
+        <!DOCTYPE html>
+        <html>
+            <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px;">
+            <h2>Reset Your Password</h2>
+            <p>Hello #{reset_details[:first_name]}!</p>
+            <p>We received a request to reset your password. Use the code below to proceed:</p>
+            <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">#{reset_details[:otp_code]}</p>
+            <p>This code expires in 10 minutes.</p>
+            <p>© #{Date.current.year} #{app_name}. All rights reserved.</p>
+            </body>
+        </html>
+        HTML
+    end
+
+    def password_reset_text_template(reset_details)
+        <<~TEXT
+        Reset Your Password - #{app_name}
+
+        Hello #{reset_details[:first_name]}!
+
+        We received a request to reset your password. Use the code below to proceed:
+
+        This is your OTP: #{reset_details[:otp_code]}
+
+        This code expires in 10 minutes.
 
         © #{Date.current.year} #{app_name}. All rights reserved.
         TEXT

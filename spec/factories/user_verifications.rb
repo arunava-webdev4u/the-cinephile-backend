@@ -11,5 +11,11 @@ FactoryBot.define do
     otp_expires_at { 10.minutes.from_now }
     verified { false }
     verified_at { nil }
+
+    # Verified account — sets both flags consistently
+    trait :verified do
+      verified { true }
+      verified_at { Time.current }
+    end
   end
 end
