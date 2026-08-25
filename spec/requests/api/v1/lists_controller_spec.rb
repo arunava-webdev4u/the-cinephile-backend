@@ -187,7 +187,7 @@ RSpec.describe "Api::V1::ListsController", type: :request do
       context "with invalid parameters" do
         it "returns unprocessable entity" do
           post "/api/v1/custom_list", params: invalid_params.to_json, headers: headers
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
           expect(JSON.parse(response.body)).to include("errors")
         end
       end
@@ -214,7 +214,7 @@ RSpec.describe "Api::V1::ListsController", type: :request do
       it "returns unprocessable entity on failure and uses correct error object" do
         # Trigger validation failure (assuming name can't be blank)
         put "/api/v1/custom_list/#{list.id}", params: { list: { name: "" } }.to_json, headers: headers
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(JSON.parse(response.body)).to include("errors")
       end
 
