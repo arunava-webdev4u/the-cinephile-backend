@@ -29,8 +29,12 @@ Rails.application.routes.draw do
         delete :logout
       end
 
-      post "auth/forgot_password", to: "auth/passwords#forgot"
-      post "auth/reset_password", to: "auth/passwords#reset"
+      resource :password, controller: :password, only: [] do
+        collection do
+          post :forgot
+          post :reset
+        end
+      end
 
       resource :user, controller: :user, only: [ :show, :update, :destroy ]
       resources :search, only: [] do

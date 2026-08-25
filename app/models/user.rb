@@ -118,8 +118,13 @@ class User < ApplicationRecord
     #     errors.add(:email, "domain is not supported")
     # end
 
+    # Account is verified once its email has been verified (verified_at stamped).
     def verified?
-        verification&.verified? || false
+        email_verified?
+    end
+
+    def email_verified?
+        verification&.verified_at.present?
     end
 
     # Whether this account ever completed email verification.

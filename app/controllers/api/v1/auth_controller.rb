@@ -29,12 +29,9 @@ class Api::V1::AuthController < Api::V1::BaseController
     verification = user.verification || user.build_verification
     verification.assign_attributes(
       otp_code: UserVerification.generate_otp,
-      otp_expires_at: 10.minutes.from_now,
-      verified: false
-      # NOTE: verified_at is intentionally NOT reset here. It permanently marks
-      # that this email was verified at some point (used by email_verified?).
-      # Resetting it here would let a /register call during an active password
-      # reset permanently strip the account's verified status.
+      otp_expires_at: 10.minutes.from_now
+      # verified_at is intentionally untouched — it permanently marks whether
+      # this email was verified, and is only stamped by mark_verified!.
     )
     verification.save!
 
@@ -47,7 +44,7 @@ class Api::V1::AuthController < Api::V1::BaseController
     verification = user.verification
 
     raise Errors::BadRequestError.new("No verification pending") unless verification
-    raise Errors::BadRequestError.new("Already verified") if verification.verified?
+    raise Errors::BadRequestError.new("Already verified") if verification.verified_at.present?
 
     if verification.expired? || !verification.match?(params[:otp])
       raise Errors::BadRequestError.new("Invalid or expired code")

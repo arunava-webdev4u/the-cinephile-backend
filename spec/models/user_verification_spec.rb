@@ -31,22 +31,6 @@ RSpec.describe UserVerification, type: :model do
         end
     end
 
-    describe "#verified?" do
-        it "returns true if verified" do
-            verification.update!(verified: true)
-            expect(verification.verified?).to be true
-        end
-
-        it "returns false if not verified" do
-            verification.update!(verified: false)
-            expect(verification.verified?).to be false
-        end
-
-        it "is false by default on a new verification" do
-            v = create(:user_verification, user: create(:user))
-            expect(v.verified?).to be false
-        end
-    end
 
     describe "#expired?" do
         it "returns false when otp has not expired yet" do
@@ -91,10 +75,9 @@ RSpec.describe UserVerification, type: :model do
     end
 
     describe "#mark_verified!" do
-        it "sets verified to true and records verified_at" do
+        it "records verified_at" do
             freeze_time do
                 verification.mark_verified!
-                expect(verification.verified).to be true
                 expect(verification.verified_at).to eq(Time.current)
             end
         end
@@ -102,7 +85,6 @@ RSpec.describe UserVerification, type: :model do
         it "persists changes to the database" do
             verification.mark_verified!
             reloaded = UserVerification.find(verification.id)
-            expect(reloaded.verified).to be true
             expect(reloaded.verified_at).to be_present
         end
     end
@@ -116,14 +98,12 @@ RSpec.describe UserVerification, type: :model do
                 verification.regenerate!(ttl: 10.minutes)
                 expect(verification.otp_code).not_to eq(old_otp)
                 expect(verification.otp_expires_at).not_to eq(otp_expires_at)
-                expect(verification.verified).to be false
             end
         end
 
-        it "resets a previously verified record back to unverified but preserves verified_at" do
+        it "preserves verified_at when regenerating (marker is permanent)" do
             verification.mark_verified!
             verification.regenerate!(ttl: 5.minutes)
-            expect(verification.verified).to be false
             expect(verification.verified_at).to be_present
         end
 
