@@ -163,7 +163,7 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         it "returns unprocessable entity" do
           post "/api/v1/custom_list/#{custom_list.id}/list_items", params: invalid_params.to_json, headers: headers
 
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
         end
 
         it "returns error details" do

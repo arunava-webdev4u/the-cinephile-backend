@@ -223,7 +223,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when email is missing" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].except(:email) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["email"]).to include("can't be blank")
                 end
 
@@ -237,28 +237,28 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when first_name is missing" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].except(:first_name) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["first_name"]).to include("can't be blank")
                 end
 
                 it "fails when last_name is missing" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].except(:last_name) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["last_name"]).to include("can't be blank")
                 end
 
                 it "fails when country is missing" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].except(:country) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["country"]).to include("can't be blank")
                 end
 
                 it "fails when date_of_birth is missing" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].except(:date_of_birth) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["date_of_birth"]).to include("can't be blank")
                 end
             end
@@ -278,7 +278,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                     invalid_emails.each do |invalid_email|
                         post "/api/v1/auth/register", params: { user: register_params[:user].merge(email: invalid_email) }.to_json, headers: headers
 
-                        expect(response).to have_http_status(:unprocessable_entity)
+                        expect(response).to have_http_status(:unprocessable_content)
                         expect(JSON.parse(response.body)["errors"]["email"]).to include("is invalid")
                     end
                 end
@@ -287,7 +287,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                     email = "#{'a'*80} #{'5'*80} #{'k'*80} #{'x'*80}@example.com"
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(email: email) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["email"]).to include("is invalid")
                 end
             end
@@ -296,14 +296,14 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when password is too short" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(password: "Ab1x", confirm_password: "Ab1x") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["password"]).to include("is too short (minimum is 8 characters)")
                 end
 
                 it "fails when password has no uppercase letter" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(password: "lowercase123", confirm_password: "lowercase123") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["password"]).to include(
                         "must contain at least one uppercase letter"
                     )
@@ -312,7 +312,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when password has no lowercase letter" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(password: "UPPERCASE123", confirm_password: "UPPERCASE123") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["password"]).to include(
                         "must contain at least one lowercase letter"
                     )
@@ -321,7 +321,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when password has no digit" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(password: "NoDigitsHere", confirm_password: "NoDigitsHere") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["password"]).to include(
                         "must contain at least one digit"
                     )
@@ -344,7 +344,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when not a string" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(first_name: "John123") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["first_name"]).to include("must contain only alphabets")
                 end
 
@@ -352,14 +352,14 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                     first_name = "asdkkfjhasdfjhaslkfhaslfhaslfhaslfjashflkashflasfhasljgsfjasgljasgflsfgasdlkfgasfjasgfjasgflasjfgaslfgaslfgsdljfg"
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(first_name: first_name) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["first_name"]).to include("is too long (maximum is 50 characters)")
                 end
 
                 it "fails when empty string" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(first_name: "") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["first_name"]).to include("is too short (minimum is 1 character)")
                 end
             end
@@ -368,7 +368,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when not a string" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(last_name: "John123") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["last_name"]).to include("must contain only alphabets")
                 end
 
@@ -376,14 +376,14 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                     last_name = "asdkkfjhasdfjhaslkfhaslfhaslfhaslfjashflkashflasfhasljgsfjasgljasgflsfgasdlkfgasfjasgfjasgflasjfgaslfgaslfgsdljfg"
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(last_name: last_name) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["last_name"]).to include("is too long (maximum is 50 characters)")
                 end
 
                 it "fails when empty string" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(last_name: "") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["last_name"]).to include("is too short (minimum is 1 character)")
                 end
             end
@@ -392,20 +392,20 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when country is not a string" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(country: "india") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["country"]).to include("is not a number")
                 end
 
                 it "fails when country is not a whole number" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(country: 3.14) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["country"]).to include("must be an integer")
                 end
                 it "fails when country is not a negetive number" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(country: -91) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["country"]).to include("must be greater than 0")
                 end
             end
@@ -414,20 +414,20 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 it "fails when invalid" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(date_of_birth: "abcd-xy-99") }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                 end
 
                 it "fails when date is in future" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(date_of_birth: Date.current + 1.day) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["date_of_birth"]).to include("can not be today or a future date")
                 end
 
                 it "fails when user is a ghost" do
                     post "/api/v1/auth/register", params: { user: register_params[:user].merge(date_of_birth: Date.current-120.years) }.to_json, headers: headers
 
-                    expect(response).to have_http_status(:unprocessable_entity)
+                    expect(response).to have_http_status(:unprocessable_content)
                     expect(JSON.parse(response.body)["errors"]["date_of_birth"]).to include("are you kidding me? You are too old!")
                 end
             end

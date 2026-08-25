@@ -10,16 +10,16 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require 'simplecov'
 SimpleCov.start 'rails' do
   # Ignore
-  add_filter '/bin/'
-  add_filter '/config/'
-  add_filter '/db/'
-  add_filter '/docs/'
-  add_filter '/log/'
-  add_filter '/public/'
-  add_filter '/script/'
-  add_filter '/spec/'
-  add_filter '/tmp/'
-  add_filter '/vendor/'
+  skip '/bin/'
+  skip '/config/'
+  skip '/db/'
+  skip '/docs/'
+  skip '/log/'
+  skip '/public/'
+  skip '/script/'
+  skip '/spec/'
+  skip '/tmp/'
+  skip '/vendor/'
 end
 
 require 'rspec/rails'

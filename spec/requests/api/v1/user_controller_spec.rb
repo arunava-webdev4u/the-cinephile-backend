@@ -167,7 +167,7 @@ RSpec.describe "Api::V1::UserController", type: :request do
       it "returns unprocessable entity" do
         put "/api/v1/user", params: invalid_params.to_json, headers: headers
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       it "returns error details" do
