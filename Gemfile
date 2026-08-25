@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-rails_version = "8.0.2"
+rails_version = "8.1.3.1"
 gem "activejob", rails_version
 gem "actionmailer", rails_version
 gem "activemodel", rails_version
@@ -8,7 +8,7 @@ gem "activerecord", rails_version
 gem "railties", rails_version
 
 gem "pg", "~> 1.1"
-gem "puma", "~> 6.6"
+gem "puma", "~> 8.0"
 gem "redis"
 gem "redis-client"          # modern Redis client (used by redis-rb v5+)
 gem "connection_pool"       # required for thread-safe pooling
@@ -18,6 +18,9 @@ gem "countries", "~> 8.1"
 # gem "jbuilder"
 
 gem "mail", "~> 2.8"
+# Security updates (dependabot alerts)
+gem "net-imap", ">= 0.5.8"
+gem "concurrent-ruby", "~> 1.3.7"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 gem "jwt"
