@@ -1,9 +1,7 @@
-# app/controllers/api/v1/auth/passwords_controller.rb
-class Api::V1::Auth::PasswordsController < Api::V1::BaseController
+# app/controllers/api/v1/password_controller.rb
+class Api::V1::PasswordController < Api::V1::BaseController
   skip_before_action :authenticate_user!, only: [ :forgot, :reset ]
 
-  # POST /api/v1/auth/forgot_password
-  # Generates a reset OTP and emails it to the user.
   def forgot
     user = User.find_by!(email: params[:email])
     raise Errors::ForbiddenError.new("Account is not verified") unless user.email_verified?
@@ -11,9 +9,8 @@ class Api::V1::Auth::PasswordsController < Api::V1::BaseController
     verification = user.verification || user.build_verification
     verification.assign_attributes(
       otp_code: UserVerification.generate_otp,
-      otp_expires_at: 10.minutes.from_now,
-      verified: false
-      # NOTE: verified_at is intentionally preserved — it records that the
+      otp_expires_at: 10.minutes.from_now
+      # verified_at is intentionally preserved — it records that the
       # account's email was verified at some point, independent of the
       # current OTP flow state.
     )
@@ -24,8 +21,6 @@ class Api::V1::Auth::PasswordsController < Api::V1::BaseController
     render json: { message: "If the email is registered, a reset code has been sent" }, status: :ok
   end
 
-  # POST /api/v1/auth/reset_password
-  # Verifies the OTP and sets a new password.
   def reset
     user = User.find_by!(email: params[:email])
     raise Errors::ForbiddenError.new("Account is not verified") unless user.email_verified?

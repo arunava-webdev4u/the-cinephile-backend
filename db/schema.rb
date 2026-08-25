@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_23_115656) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_25_135942) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,7 +38,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_23_115656) do
     t.bigint "user_id", null: false
     t.string "otp_code", null: false
     t.datetime "otp_expires_at", null: false
-    t.boolean "verified", default: false, null: false
     t.datetime "verified_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

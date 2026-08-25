@@ -1,7 +1,7 @@
 require "rails_helper"
 require "sidekiq/testing"
 
-RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
+RSpec.describe "Api::V1::PasswordController", type: :request do
   include ActiveSupport::Testing::TimeHelpers
 
   let(:headers) { { "CONTENT_TYPE" => "application/json" } }
@@ -15,14 +15,14 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
     Sidekiq::Worker.clear_all
   end
 
-  describe "POST /api/v1/auth/forgot_password" do
+  describe "POST /api/v1/password/forgot" do
     context "with a registered email" do
       before do
         create(:user_verification, :verified, user: user)
       end
 
       it "returns ok with a generic message" do
-        post "/api/v1/auth/forgot_password", params: { email: user.email }.to_json, headers: headers
+        post "/api/v1/password/forgot", params: { email: user.email }.to_json, headers: headers
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)["message"]).to include("reset code has been sent")
@@ -31,41 +31,41 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       it "regenerates the OTP" do
         old_otp = user.verification.otp_code
 
-        post "/api/v1/auth/forgot_password", params: { email: user.email }.to_json, headers: headers
+        post "/api/v1/password/forgot", params: { email: user.email }.to_json, headers: headers
 
         expect(user.verification.reload.otp_code).not_to eq(old_otp)
-        expect(user.verification.verified).to be_falsey
+        expect(user.email_verified?).to be true
       end
 
       it "sets a fresh expiry 10 minutes out" do
-        post "/api/v1/auth/forgot_password", params: { email: user.email }.to_json, headers: headers
+        post "/api/v1/password/forgot", params: { email: user.email }.to_json, headers: headers
 
         expect(user.verification.reload.otp_expires_at).to be_within(1.minute).of(10.minutes.from_now)
       end
 
       it "enqueues SendPasswordResetEmailWorker" do
         expect {
-          post "/api/v1/auth/forgot_password", params: { email: user.email }.to_json, headers: headers
+          post "/api/v1/password/forgot", params: { email: user.email }.to_json, headers: headers
         }.to change(SendPasswordResetEmailWorker.jobs, :size).by(1)
       end
     end
 
     context "with an unverified account" do
       before do
-        user.verification&.update!(verified: false)
+        user.verification&.update!(verified_at: nil)
       end
 
       it "returns forbidden on forgot_password" do
-        post "/api/v1/auth/forgot_password", params: { email: user.email }.to_json, headers: headers
+        post "/api/v1/password/forgot", params: { email: user.email }.to_json, headers: headers
 
         expect(response).to have_http_status(:forbidden)
         expect(JSON.parse(response.body)["detail"]).to eq("Account is not verified")
       end
 
       it "returns forbidden on reset_password" do
-        verification = user.verification || create(:user_verification, user: user, verified: false)
+        verification = user.verification || create(:user_verification, user: user)
 
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -75,7 +75,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       end
 
       it "does not enqueue any email" do
-        post "/api/v1/auth/forgot_password", params: { email: user.email }.to_json, headers: headers
+        post "/api/v1/password/forgot", params: { email: user.email }.to_json, headers: headers
 
         expect(SendPasswordResetEmailWorker.jobs).to be_empty
       end
@@ -83,7 +83,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
 
     context "with an unknown email" do
       it "returns not_found (global RecordNotFound handler)" do
-        post "/api/v1/auth/forgot_password", params: { email: "ghost@example.com" }.to_json, headers: headers
+        post "/api/v1/password/forgot", params: { email: "ghost@example.com" }.to_json, headers: headers
 
         expect(response).to have_http_status(:not_found)
         expect(JSON.parse(response.body)["title"]).to eq("Not Found")
@@ -91,14 +91,14 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
 
       it "does not enqueue any email" do
         expect {
-          post "/api/v1/auth/forgot_password", params: { email: "ghost@example.com" }.to_json, headers: headers
+          post "/api/v1/password/forgot", params: { email: "ghost@example.com" }.to_json, headers: headers
         }.not_to change(SendPasswordResetEmailWorker.jobs, :size)
       end
     end
 
     context "when email is missing" do
       it "returns bad_request via ParameterMissing handler" do
-        post "/api/v1/auth/forgot_password", params: {}.to_json, headers: headers
+        post "/api/v1/password/forgot", params: {}.to_json, headers: headers
 
         # find_by!(email: nil) raises RecordNotFound → 404
         expect(response).to have_http_status(:not_found)
@@ -106,17 +106,16 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
     end
   end
 
-  describe "POST /api/v1/auth/reset_password" do
-    # A verified account with a pending (unverified-flag) reset OTP
+  describe "POST /api/v1/password/reset" do
+    # A verified account with a pending reset OTP (verified_at preserved)
     let!(:verification) do
       create(:user_verification, :verified, user: user)
-      user.verification.update!(verified: false) # OTP pending for the reset flow
       user.reload.verification
     end
 
-    context "with a valid OTP and matching passwords" do
+    context "with a valid OTP and matching password" do
       it "returns ok with success message" do
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -126,7 +125,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       end
 
       it "updates the password" do
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -137,7 +136,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       it "invalidates existing JWTs by rotating jti" do
         old_jti = user.jti
 
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -148,7 +147,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
 
     context "with an unknown email" do
       it "returns not_found" do
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: "ghost@example.com", otp: "123456",
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -163,7 +162,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       end
 
       it "returns forbidden since the account cannot be proven verified" do
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: "123456",
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -175,7 +174,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
 
     context "with a wrong OTP" do
       it "returns bad_request" do
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: "000000",
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -191,7 +190,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       end
 
       it "returns bad_request" do
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -201,11 +200,11 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       end
     end
 
-    context "when passwords do not match" do
+    context "when password do not match" do
       it "returns bad_request without changing the password" do
         old_digest = user.password_digest
 
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "Different123"
         }.to_json, headers: headers
@@ -218,7 +217,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
 
     context "when the new password violates the password policy" do
       it "returns 422 with field errors via global RecordInvalid handler" do
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "weakpass", confirm_password: "weakpass"
         }.to_json, headers: headers
@@ -232,14 +231,14 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       it "the OTP can no longer be reused" do
         otp = verification.otp_code
 
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: otp,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
 
         expect(response).to have_http_status(:ok)
 
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: otp,
           password: "Another123", confirm_password: "Another123"
         }.to_json, headers: headers
@@ -253,7 +252,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
         travel_to(1.second.from_now) do
           verification.update!(otp_expires_at: Time.current)
 
-          post "/api/v1/auth/reset_password", params: {
+          post "/api/v1/password/reset", params: {
             email: user.email, otp: verification.otp_code,
             password: "NewPass123", confirm_password: "NewPass123"
           }.to_json, headers: headers
@@ -267,7 +266,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
         travel_to(Time.current) do
           verification.update!(otp_expires_at: 1.second.from_now)
 
-          post "/api/v1/auth/reset_password", params: {
+          post "/api/v1/password/reset", params: {
             email: user.email, otp: verification.otp_code,
             password: "NewPass123", confirm_password: "NewPass123"
           }.to_json, headers: headers
@@ -280,7 +279,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
         old_digest = user.password_digest
         verification.update!(otp_expires_at: 15.minutes.ago)
 
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -290,26 +289,22 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
     end
 
     context "cross-flow security" do
-      it "a reset OTP cannot be used to verify email (and vice versa is moot — same record)" do
-        # The reset flow sets verified=false; verify_email with the reset OTP
-        # would mark the account verified WITHOUT knowing the current password.
-        # This documents the (accepted) behavior of the shared-OTP design.
-        user.verification&.update!(verified: false)
-        verification = create(:user_verification, :verified, user: user)
-        user.verification.update!(verified: false) # pending reset OTP
-        reset_otp = user.verification.otp_code
+      it "a reset OTP cannot be used to verify email — already-verified accounts are rejected" do
+        # With verified_at as the single source of truth, verify_email rejects
+        # already-verified accounts outright, so a reset OTP cannot be replayed
+        # into the verification flow. No `purpose` column needed.
+        reset_otp = verification.otp_code
 
         post "/api/v1/auth/verify_email", params: { email: user.email, otp: reset_otp }.to_json, headers: headers
 
-        # Same OTP slot means this succeeds — accepted trade-off of shared OTP.
-        # If this must be blocked, a `purpose` column on user_verifications is needed.
-        expect(response).to have_http_status(:created)
+        expect(response).to have_http_status(:bad_request)
+        expect(JSON.parse(response.body)["detail"]).to include("Already verified")
       end
 
       it "a forgotten-password OTP regeneration invalidates any previously issued OTP for that account" do
         old_otp = user.verification.otp_code
 
-        post "/api/v1/auth/forgot_password", params: { email: user.email }.to_json, headers: headers
+        post "/api/v1/password/forgot", params: { email: user.email }.to_json, headers: headers
         expect(response).to have_http_status(:ok)
 
         expect(user.verification.reload.otp_code).not_to eq(old_otp)
@@ -320,7 +315,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       it "an old JWT no longer authenticates after a password reset" do
         old_token = Auth::JsonWebToken.encode({ user_id: user.id, jti: user.jti })
 
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers
@@ -332,7 +327,7 @@ RSpec.describe "Api::V1::Auth::PasswordsController", type: :request do
       end
 
       it "login works with the new password and fails with the old one" do
-        post "/api/v1/auth/reset_password", params: {
+        post "/api/v1/password/reset", params: {
           email: user.email, otp: verification.otp_code,
           password: "NewPass123", confirm_password: "NewPass123"
         }.to_json, headers: headers

@@ -395,7 +395,7 @@ RSpec.describe SendVerificationEmailWorker, type: :worker do
     end
 
     it 'handles verified users' do
-      verification.update(verified: true, verified_at: Time.current)
+      verification.update(verified_at: Time.current)
 
       # Worker should still send email even if user is already verified
       expect {

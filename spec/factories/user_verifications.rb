@@ -9,12 +9,10 @@ FactoryBot.define do
 
     otp_code { UserVerification.generate_otp }
     otp_expires_at { 10.minutes.from_now }
-    verified { false }
     verified_at { nil }
 
-    # Verified account — sets both flags consistently
+    # Verified account — stamps the permanent email-verification marker
     trait :verified do
-      verified { true }
       verified_at { Time.current }
     end
   end

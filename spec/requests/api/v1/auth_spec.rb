@@ -113,7 +113,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 post "/api/v1/auth/register", params: register_params.to_json, headers: headers
                 verification = User.find_by(email: register_params[:user][:email]).verification
                 expect(verification).not_to be_nil
-                expect(verification.verified).to be_falsey
+                expect(verification.verified_at).to be_nil
             end
 
             it "generates a 6-digit OTP code" do
@@ -142,7 +142,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                 context "and is verified" do
                     it "will not create a new record in user_verifications" do
-                        create(:user_verification, user: user, verified: true)
+                        create(:user_verification, :verified, user: user)
 
                         params = register_params.deep_dup
                         params[:user][:email] = user.email
@@ -160,7 +160,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                 context "and is not verified" do
                     it "will update the record in user_verifications" do
                         create(:user_verification, :verified, user: user)
-                        user.verification.update!(verified: false) # simulate a pending reset flow
+                        user.verification.update!(verified_at: nil) # simulate OTP pending for a reset flow
 
                         params = register_params.deep_dup
                         params[:user][:email] = user.email
@@ -173,7 +173,6 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                     it "does not wipe verified_at (permanent email-verification marker)" do
                         create(:user_verification, :verified, user: user)
-                        user.verification.update!(verified: false) # e.g. a password reset started
                         original_verified_at = user.verification.verified_at
                         expect(original_verified_at).to be_present
 
@@ -187,7 +186,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
                     end
 
                     it "should regenerate the OTP and otp_expires_at" do
-                        verification = create(:user_verification, user: user, verified: false)
+                        verification = create(:user_verification, user: user)
                         old_otp = verification.otp_code
                         old_expiry = verification.otp_expires_at
 
@@ -464,7 +463,7 @@ RSpec.describe "Api::V1::AuthController", type: :request do
             end
 
             it "rejects already verified emails" do
-                verification.update!(verified: true)
+                verification.mark_verified!
                 post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
 
                 expect(response).to have_http_status(:bad_request)
@@ -542,7 +541,6 @@ RSpec.describe "Api::V1::AuthController", type: :request do
 
                 post "/api/v1/auth/verify_email", params: { email: user.email, otp: verification.otp_code }.to_json, headers: headers
 
-                expect(verification.reload.verified).to be_falsey
                 expect(user.reload.email_verified?).to be false
             end
         end

@@ -525,13 +525,13 @@ RSpec.describe User, type: :model do
           expect(user.reload.verified?).to be false
         end
 
-        it 'returns false when verification record exists but is not verified' do
-          create(:user_verification, user: user, verified: false)
+        it 'returns false when verification record exists but email was never verified' do
+          create(:user_verification, user: user)
           expect(user.reload.verified?).to be false
         end
 
-        it 'returns true when verification record is verified' do
-          create(:user_verification, user: user, verified: true)
+        it 'returns true when the email has been verified' do
+          create(:user_verification, :verified, user: user)
           expect(user.reload.verified?).to be true
         end
       end
