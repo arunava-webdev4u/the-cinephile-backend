@@ -127,6 +127,13 @@ class User < ApplicationRecord
         verification&.verified_at.present?
     end
 
+    # Whether this account ever completed email verification.
+    # Unlike verified?, this survives subsequent OTP flows (password resets),
+    # because those clear `verified` but preserve `verified_at`.
+    def email_verified?
+        verification&.verified_at.present?
+    end
+
     def create_verification_record
         build_verification(
             otp_code: UserVerification.generate_otp,

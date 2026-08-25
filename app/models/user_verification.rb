@@ -19,8 +19,8 @@ class UserVerification < ApplicationRecord
 
     def regenerate!(ttl: 10.minutes)
         update!(
-        otp_code: self.class.generate_otp,
-        otp_expires_at: ttl.from_now
+            otp_code: self.class.generate_otp,
+            otp_expires_at: ttl.from_now
         )
     end
 
