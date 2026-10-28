@@ -56,6 +56,10 @@ Rails.application.routes.draw do
       end
 
       resources :default_list, controller: :lists, type: "DefaultList", only: [ :index, :show ] do
+        collection do
+          get :watchlist, to: "list_items#watchlist"
+        end
+
         resources :list_items, only: [ :index, :create, :destroy ]
       end
 

@@ -1,29 +1,18 @@
 # app/controllers/api/v1/list_items_controller.rb
 class Api::V1::ListItemsController < Api::V1::BaseController
-    before_action :set_list
+    before_action :set_list, except: :watchlist
 
     def index
-        list_items = @list.list_items
-        tmdb_data = TmdbService.new.fetch_batch(list_items)
+        render json: serialized_items_for(@list), status: :ok
+    end
 
-        missing_tmdb_indices = []
-
-        items_with_data = list_items.map.with_index do |item, index|
-            if tmdb_data[index].nil?
-                missing_tmdb_indices << index
-                next
-            end
-            Movies::ListSerializer.new(item, tmdb_data[index]).as_json
-        end.compact
-
-        if missing_tmdb_indices.any?
-            Rails.logger.warn(
-                "TMDB data missing for #{missing_tmdb_indices.length} of #{list_items.length} list items " +
-                "(list_id: #{@list.id}, type: #{@list.type})"
-            )
-        end
-
-        render json: items_with_data, status: :ok
+    def watchlist
+        list = @current_user.lists.where(type: "DefaultList").find_by!(name: "watchlist")
+        render json: {
+            id: list.id,
+            name: list.name,
+            items: serialized_items_for(list)
+        }, status: :ok
     end
 
     def create
@@ -38,6 +27,31 @@ class Api::V1::ListItemsController < Api::V1::BaseController
     end
 
     private
+
+    def serialized_items_for(list)
+        list_items = list.list_items
+        tmdb_data = TmdbService.new.fetch_batch(list_items)
+
+        missing_tmdb_indices = []
+
+        items_with_data = list_items.map.with_index do |item, index|
+            if tmdb_data[index].nil?
+                missing_tmdb_indices << index
+                next
+            end
+            serializer = item.item_type == "tv_show" ? TvShows::ListSerializer : Movies::ListSerializer
+            serializer.new(item, tmdb_data[index]).as_json
+        end.compact
+
+        if missing_tmdb_indices.any?
+            Rails.logger.warn(
+                "TMDB data missing for #{missing_tmdb_indices.length} of #{list_items.length} list items " +
+                "(list_id: #{list.id}, type: #{list.type})"
+            )
+        end
+
+        items_with_data
+    end
 
     def set_list
         valid_types = [ "CustomList", "DefaultList" ]
