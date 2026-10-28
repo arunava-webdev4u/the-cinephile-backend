@@ -26,6 +26,11 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
       get "/api/v1/custom_list/#{custom_list.id}/list_items", headers: headers
       expect(response).to have_http_status(:unauthorized)
     end
+
+    it "returns unauthorized for the watchlist endpoint if token is missing" do
+      get "/api/v1/default_list/watchlist", headers: { "CONTENT_TYPE" => "application/json" }
+      expect(response).to have_http_status(:unauthorized)
+    end
   end
 
   context "for CustomList" do
@@ -225,6 +230,46 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
 
   context "for DefaultList" do
     let(:default_list) { user.lists.where(type: "DefaultList").first }
+    let(:watchlist) { user.lists.find_by!(type: "DefaultList", name: "watchlist") }
+
+    describe "GET /api/v1/default_list/watchlist" do
+      it "returns the current user's watchlist and serialized items" do
+        FactoryBot.create(:list_item, list_id: watchlist.id, item_id: 550, item_type: "Movie")
+        FactoryBot.create(:list_item, list_id: watchlist.id, item_id: 123, item_type: "TV_Show")
+        allow(tmdb_service).to receive(:fetch_batch).and_return([
+          { "id" => 550, "title" => "Fight Club", "overview" => "A ticking-time-bomb insomniac..." },
+          { "id" => 123, "name" => "The Example Show", "overview" => "A television series." }
+        ])
+
+        get "/api/v1/default_list/watchlist", headers: headers
+
+        expect(response).to have_http_status(:ok)
+        parsed_response = JSON.parse(response.body)
+        expect(parsed_response).to include("id" => watchlist.id, "name" => "watchlist")
+        expect(parsed_response.fetch("items")).to contain_exactly(
+          include("id" => 550, "type" => "movie", "title" => "Fight Club"),
+          include("id" => 123, "type" => "tv_show", "title" => "The Example Show")
+        )
+        expect(parsed_response.fetch("items").first).not_to have_key("list_item_id")
+      end
+
+      it "returns an empty items array when the watchlist is empty" do
+        allow(tmdb_service).to receive(:fetch_batch).and_return([])
+
+        get "/api/v1/default_list/watchlist", headers: headers
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to include("id" => watchlist.id, "items" => [])
+      end
+
+      it "returns not found if the current user has no watchlist" do
+        watchlist.destroy!
+
+        get "/api/v1/default_list/watchlist", headers: headers
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
 
     describe "GET /api/v1/default_list/:default_list_id/list_items" do
       context "with list items" do
@@ -243,7 +288,8 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
           get "/api/v1/default_list/#{default_list.id}/list_items", headers: headers
 
           expect(response).to have_http_status(:ok)
-          expect(JSON.parse(response.body).length).to eq(2)
+          parsed_items = JSON.parse(response.body)
+          expect(parsed_items.length).to eq(2)
         end
       end
 

@@ -19,6 +19,20 @@ RSpec.describe TmdbService, type: :service do
         end
     end
 
+    describe "#fetch_batch" do
+        let(:service) { described_class.new }
+
+        it "maps stored tv_show items to TMDB's tv type" do
+            tv_item = instance_double(ListItem, item_id: 123, item_type: "tv_show")
+            allow(service).to receive(:search_by_id).and_return({ "id" => 123 })
+
+            result = service.fetch_batch([ tv_item ])
+
+            expect(service).to have_received(:search_by_id).with(123, "tv")
+            expect(result).to eq([ { "id" => 123 } ])
+        end
+    end
+
     describe "#trending" do
         let(:expected_response) { { 'results' => [ { 'id' => 101, 'title' => 'Sample Movie' } ] } }
         let!(:service) { described_class.new }
