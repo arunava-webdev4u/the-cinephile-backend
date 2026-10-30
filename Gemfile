@@ -12,7 +12,7 @@ gem "puma", "~> 8.0"
 gem "redis"
 gem "redis-client"          # modern Redis client (used by redis-rb v5+)
 gem "connection_pool"       # required for thread-safe pooling
-gem "faraday", "~> 2.7"
+gem "faraday", "~> 2.15"
 gem "countries", "~> 8.1"
 
 # Security updates (dependabot alerts)
