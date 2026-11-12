@@ -262,6 +262,22 @@ RSpec.describe "Api::V1::ListItemsController", type: :request do
         expect(JSON.parse(response.body)).to include("id" => watchlist.id, "items" => [])
       end
 
+      it "does not include another user's watchlist items" do
+        FactoryBot.create(:list_item, list_id: watchlist.id, item_id: 550, item_type: "movie")
+        other_watchlist = other_user.lists.find_by!(type: "DefaultList", name: "watchlist")
+        FactoryBot.create(:list_item, list_id: other_watchlist.id, item_id: 13, item_type: "movie")
+        allow(tmdb_service).to receive(:fetch_batch).and_return([
+          { "id" => 550, "title" => "Fight Club" }
+        ])
+
+        get "/api/v1/default_list/watchlist", headers: headers
+
+        expect(response).to have_http_status(:ok)
+        parsed_response = JSON.parse(response.body)
+        expect(parsed_response.fetch("id")).to eq(watchlist.id)
+        expect(parsed_response.fetch("items").map { |item| item.fetch("id") }).to eq([ 550 ])
+      end
+
       it "returns not found if the current user has no watchlist" do
         watchlist.destroy!
 
